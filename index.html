@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- CÍMSOR: A "Piramis Balog" kulcsszavak kiemelve a Google kereső számára -->
+    <!-- CÍMSOR: Piramis Balog keresőoptimális címsor -->
     <title>Piramis Balog - Műholdtól a Bejáratig | Hivatalos Oldal</title>
 
     <!-- SEO META CÍMKÉK -->
@@ -16,16 +16,16 @@
     <!-- KANONIKUS LINK -->
     <link rel="canonical" href="https://piramisbalog.github.io/">
 
-    <!-- GOOGLE SITE VERIFICATION META BACKUP -->
+    <!-- GOOGLE SITE VERIFICATION META -->
     <meta name="google-site-verification" content="google57f4eed80b0aa14b">
 
-    <!-- OPEN GRAPH CÍMKÉK (Közösségi média és kereső előnézet) -->
+    <!-- OPEN GRAPH CÍMKÉK -->
     <meta property="og:title" content="Piramis Balog - Műholdtól a Bejáratig">
     <meta property="og:description" content="Balog Piramis hivatalos interaktív weboldala.">
     <meta property="og:url" content="https://piramisbalog.github.io/">
     <meta property="og:type" content="website">
 
-    <!-- Első képkocka előtöltése a gyors indításhoz -->
+    <!-- Első képkocka előtöltése -->
     <link
         rel="preload"
         as="image"
@@ -52,6 +52,7 @@
             overflow-x: hidden;
         }
 
+        /* Navigáció és Menü */
         .menu-container {
             position: fixed;
             top: 25px;
@@ -135,6 +136,7 @@
             color: #f4d03f;
         }
 
+        /* Vászon (Canvas) */
         .canvas-container {
             position: fixed;
             inset: 0;
@@ -162,6 +164,7 @@
             pointer-events: none;
         }
 
+        /* Állandóan látható Görgetés-jelző a kijelző alján */
         .scroll-indicator {
             position: fixed;
             bottom: 35px;
@@ -171,6 +174,7 @@
             color: white;
             font-size: 0.9rem;
             opacity: 1;
+            visibility: visible;
             animation: bounce 2s infinite;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
             pointer-events: none;
@@ -180,8 +184,6 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(212, 165, 116, 0.3);
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            will-change: transform, opacity;
         }
 
         @keyframes bounce {
@@ -196,6 +198,7 @@
             }
         }
 
+        /* Haladási sáv */
         .progress-container {
             position: fixed;
             bottom: 0;
@@ -216,6 +219,7 @@
             box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
         }
 
+        /* Betöltő képernyő */
         .skeleton-loading {
             position: fixed;
             inset: 0;
@@ -324,22 +328,25 @@
             }
         }
 
-        .hero-section {
-            height: 100vh;
+        /* Görgetési felület hossza (~5 másodperc/kényelmes görgetés) */
+        .scroll-container {
             position: relative;
             z-index: 2;
+        }
+
+        .hero-section {
+            height: 100vh;
             pointer-events: none;
         }
 
         .content-section {
-            min-height: 100vh;
+            min-height: 140vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 2rem;
             background: transparent;
             position: relative;
-            z-index: 2;
             pointer-events: none;
         }
 
@@ -443,6 +450,7 @@
 </head>
 
 <body>
+    <!-- Betöltő képernyő -->
     <div class="skeleton-loading" id="skeletonLoading">
         <div class="skeleton-canvas"></div>
 
@@ -458,6 +466,7 @@
         </div>
     </div>
 
+    <!-- Navigáció -->
     <nav class="menu-container" aria-label="Főmenü">
         <div
             class="hamburger-icon"
@@ -480,74 +489,80 @@
         </div>
     </nav>
 
+    <!-- Haladási sáv -->
     <div class="progress-container" aria-hidden="true">
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
+    <!-- Állandóan látható felirat a kijelző alján -->
     <div class="scroll-indicator" id="scrollIndicator">
         ↓ Görgess lefelé ↓
     </div>
 
+    <!-- Canvas -->
     <div class="canvas-container">
         <canvas id="mainCanvas"></canvas>
         <div class="overlay"></div>
     </div>
 
-    <div class="hero-section"></div>
+    <!-- Görgethető szekciók -->
+    <div class="scroll-container">
+        <div class="hero-section"></div>
 
-    <section class="content-section" id="bemutatkozas">
-        <div class="info-card">
-            <h1>Piramis Balog</h1>
-            <p>
-                A kamera távolról közelít, felfedi a piramis monumentális
-                méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi
-                Egyiptom rejtett csodáit a Balog Piramis hivatalos oldalán.
-            </p>
-        </div>
-    </section>
+        <section class="content-section" id="bemutatkozas">
+            <div class="info-card">
+                <h1>Piramis Balog</h1>
+                <p>
+                    A kamera távolról közelít, felfedi a piramis monumentális
+                    méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi
+                    Egyiptom rejtett csodáit a Balog Piramis hivatalos oldalán.
+                </p>
+            </div>
+        </section>
 
-    <section class="content-section" id="multunk">
-        <div class="info-card">
-            <h2>Múltunk</h2>
-            <p>
-                Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit.
-                Spirálozva ereszkedés közben minden oldalról bemutatjuk az
-                építményt, feltárva szimmetriáját.
-            </p>
-        </div>
-    </section>
+        <section class="content-section" id="multunk">
+            <div class="info-card">
+                <h2>Múltunk</h2>
+                <p>
+                    Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit.
+                    Spirálozva ereszkedés közben minden oldalról bemutatjuk az
+                    építményt, feltárva szimmetriáját.
+                </p>
+            </div>
+        </section>
 
-    <section class="content-section" id="elerhetoseg">
-        <div class="info-card">
-            <h2>📬 Elérhetőség</h2>
+        <section class="content-section" id="elerhetoseg">
+            <div class="info-card">
+                <h2>📬 Elérhetőség</h2>
 
-            <p>
-                📧 balogpiramis@gmail.com<br>
-                📱 Függőben<br>
-                📍
-                <a
-                    href="https://maps.app.goo.gl/qzjUGYWwJE71uWdN6?g_st=ic"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Térkép megnyitása
-                </a>
-            </p>
+                <p>
+                    📧 balogpiramis@gmail.com<br>
+                    📱 Függőben<br>
+                    📍
+                    <a
+                        href="https://maps.app.goo.gl/qzjUGYWwJE71uWdN6?g_st=ic"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Térkép megnyitása
+                    </a>
+                </p>
 
-            <iframe
-                class="map-frame"
-                src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed"
-                title="Balogpiramis helye a térképen"
-                loading="lazy"
-                allowfullscreen
-                referrerpolicy="no-referrer-when-downgrade"
-            ></iframe>
+                <iframe
+                    class="map-frame"
+                    src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed"
+                    title="Balogpiramis helye a térképen"
+                    loading="lazy"
+                    allowfullscreen
+                    referrerpolicy="no-referrer-when-downgrade"
+                ></iframe>
 
-            <p>
-                Kövess minket, és légy részese az ősi titkok feltárásának!
-            </p>
-        </div>
-    </section>
+                <p>
+                    Kövess minket, és légy részese az ősi titkok feltárásának!
+                </p>
+            </div>
+        </section>
+    </div>
 
     <script>
         (() => {
@@ -566,17 +581,17 @@
             const progressBar = document.getElementById("progressBar");
             const skeletonLoading = document.getElementById("skeletonLoading");
             const skeletonProgress = document.getElementById("skeletonProgress");
-            const scrollIndicator = document.getElementById("scrollIndicator");
             const hamburgerBtn = document.getElementById("hamburgerBtn");
             const menuList = document.getElementById("menuList");
 
-            const FRAME_COUNT = 294;
+            // Pontosan 300 képkockára frissítve
+            const FRAME_COUNT = 300;
             const FRAME_PATH = "./Frames1/frame_";
             const FRAME_EXTENSION = ".webp";
 
             const isMobile = window.matchMedia("(max-width: 768px)").matches;
             const FRAME_STEP = isMobile ? 3 : 1;
-            const MAX_CACHED_FRAMES = isMobile ? 24 : 48;
+            const MAX_CACHED_FRAMES = isMobile ? 32 : 64;
 
             const images = new Map();
             const loadingFrames = new Map();
@@ -858,7 +873,7 @@
 
             function preloadAroundFrame(centerFrame) {
                 const center = normalizeFrameIndex(centerFrame);
-                const radius = isMobile ? 6 : 8;
+                const radius = isMobile ? 8 : 12;
 
                 loadFrame(center, "high");
 
@@ -922,11 +937,6 @@
             function updateFromScroll() {
                 rafPending = false;
 
-                const scrollTop =
-                    window.scrollY ||
-                    document.documentElement.scrollTop ||
-                    0;
-
                 const progress = getScrollProgress();
 
                 requestedFrame = normalizeFrameIndex(
@@ -934,14 +944,6 @@
                 );
 
                 progressBar.style.transform = `scaleX(${progress})`;
-
-                if (scrollIndicator) {
-                    const opacity = Math.max(0, 1 - scrollTop / 150);
-
-                    scrollIndicator.style.opacity = String(opacity);
-                    scrollIndicator.style.visibility =
-                        opacity > 0.01 ? "visible" : "hidden";
-                }
 
                 if (requestedFrame !== currentFrame) {
                     ensureRequestedFrame();
