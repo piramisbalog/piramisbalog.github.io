@@ -123,42 +123,37 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.2);
             z-index: 1;
             pointer-events: none;
         }
 
-        /* ========== ELŐADÓ / HERO SZEKCIÓ ========== */
-        .hero-section {
-            height: 100vh;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 40px;
-            position: relative;
-            z-index: 2;
-            pointer-events: none;
-        }
-
+        /* ========== RÖGZÍTETT GÖRGESS LEFELÉ FELIRAT ========== */
         .scroll-indicator {
-            z-index: 2;
+            position: fixed;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
             color: white;
             font-size: 0.9rem;
-            opacity: 0.8;
+            opacity: 1;
             animation: bounce 2s infinite;
             text-shadow: 0 2px 10px rgba(0,0,0,0.9);
             pointer-events: none;
-            background: rgba(0,0,0,0.4);
-            padding: 8px 16px;
-            border-radius: 20px;
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(212, 165, 116, 0.2);
+            background: rgba(10, 10, 10, 0.6);
+            padding: 10px 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(212, 165, 116, 0.3);
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
         @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-10px); }
-            60% { transform: translateY(-5px); }
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
         }
 
         .progress-container {
@@ -284,7 +279,14 @@
             100% { background-position: 200% 0; }
         }
 
-        /* ========== TARTALMI SZEKCIÓK ========== */
+        /* ========== GÖRGŐS SZEKCIÓK ========== */
+        .hero-section {
+            height: 100vh;
+            position: relative;
+            z-index: 2;
+            pointer-events: none;
+        }
+
         .content-section {
             min-height: 100vh;
             display: flex;
@@ -359,6 +361,12 @@
                 border-right-width: 55px;
                 border-bottom-width: 100px;
             }
+
+            .scroll-indicator {
+                font-size: 0.8rem;
+                padding: 8px 16px;
+                bottom: 25px;
+            }
         }
     </style>
 </head>
@@ -393,6 +401,9 @@
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
+    <!-- GÖRGESS LEFELÉ FELIRAT (FIXED ALUL) -->
+    <div class="scroll-indicator" id="scrollIndicator">↓ Görgess lefelé ↓</div>
+
     <!-- CANVAS HÁTTÉR (FIXED) -->
     <div class="canvas-container" id="canvasSection">
         <canvas id="mainCanvas"></canvas>
@@ -400,9 +411,7 @@
     </div>
 
     <!-- PÁRHUZAMOSAN GÖRGŐS TARTALMAK -->
-    <div class="hero-section">
-        <div class="scroll-indicator">↓ Görgess lefelé ↓</div>
-    </div>
+    <div class="hero-section"></div>
 
     <div class="content-section" id="bemutatkozas">
         <div class="info-card">
@@ -457,6 +466,7 @@
         const progressBar = document.getElementById('progressBar');
         const skeletonLoading = document.getElementById('skeletonLoading');
         const skeletonProgress = document.getElementById('skeletonProgress');
+        const scrollIndicator = document.getElementById('scrollIndicator');
 
         const frameCount = 294;
         const images = [];
@@ -526,8 +536,9 @@
             
             const canvasRatio = canvas.width / canvas.height;
             const imgRatio = img.width / img.height;
-            
-            // 1. BLURRED HÁTTÉR RAJZOLÁSA (COVER) - Megszünteti a fekete sávokat!
+            const isMobile = window.innerWidth <= 768;
+
+            // 1. BLURRED COVER HÁTTÉR SZÁMÍTÁSA (Kitölti a teljes képernyőt)
             let bgW, bgH, bgX, bgY;
             if (imgRatio > canvasRatio) {
                 bgH = canvas.height;
@@ -541,32 +552,43 @@
                 bgY = (canvas.height - bgH) / 2;
             }
 
-            ctx.save();
-            ctx.filter = 'blur(25px) brightness(0.45) contrast(1.1)';
-            ctx.drawImage(img, bgX, bgY, bgW, bgH);
-            ctx.restore();
+            // Asztali gépen elmosódott hátteret rajzolunk a fekete sávok helyére
+            if (!isMobile) {
+                ctx.save();
+                ctx.filter = 'blur(25px) brightness(0.45) contrast(1.1)';
+                ctx.drawImage(img, bgX, bgY, bgW, bgH);
+                ctx.restore();
+            }
 
-            // 2. ÉLES FŐKÉP RAJZOLÁSA (CONTAIN) - Finom lágy árnyékkal
+            // 2. FŐ KÉP RAJZOLÁSA
             let drawWidth, drawHeight, offsetX, offsetY;
-            if (imgRatio > canvasRatio) {
-                drawWidth = canvas.width;
-                drawHeight = drawWidth / imgRatio;
-                offsetX = 0;
-                offsetY = (canvas.height - drawHeight) / 2;
+
+            if (isMobile) {
+                // MOBILON: COVER MÓD -> Automatika belenagyít a kép közepébe, kitöltve a kijelzőt
+                drawWidth = bgW;
+                drawHeight = bgH;
+                offsetX = bgX;
+                offsetY = bgY;
             } else {
-                drawHeight = canvas.height;
-                drawWidth = drawHeight * imgRatio;
-                offsetX = (canvas.width - drawWidth) / 2;
-                offsetY = 0;
+                // ASZTALI GÉPEN: CONTAIN MÓD -> A teljes 16:9-es kép élesen látszik középen
+                if (imgRatio > canvasRatio) {
+                    drawWidth = canvas.width;
+                    drawHeight = drawWidth / imgRatio;
+                    offsetX = 0;
+                    offsetY = (canvas.height - drawHeight) / 2;
+                } else {
+                    drawHeight = canvas.height;
+                    drawWidth = drawHeight * imgRatio;
+                    offsetX = (canvas.width - drawWidth) / 2;
+                    offsetY = 0;
+                }
             }
 
             ctx.save();
-            // Finom átmeneti árnyék a főkép szélein
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-            ctx.shadowBlur = 35;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
-            
+            if (!isMobile) {
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                ctx.shadowBlur = 35;
+            }
             ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
             ctx.restore();
         }
@@ -575,6 +597,13 @@
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
             
+            // "Görgess lefelé" kijelző elhalványítása görgetéskor
+            if (scrollIndicator) {
+                const fadeOpacity = Math.max(0, 1 - (scrollTop / 150));
+                scrollIndicator.style.opacity = fadeOpacity;
+                scrollIndicator.style.visibility = fadeOpacity > 0 ? 'visible' : 'hidden';
+            }
+
             const progress = maxScroll > 0 ? Math.min(1, Math.max(0, scrollTop / maxScroll)) : 0;
             
             const frameIndex = Math.min(
