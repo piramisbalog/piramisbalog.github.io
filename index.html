@@ -527,13 +527,13 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // 📍 MODEL ELFORGATÁSA (120 fokkal jobbra / ellentétes irányba)
-            const pyramidRotationY = -0.55 - (120 * Math.PI / 180); 
+            // 📍 KORRIGÁLT ELFORGATÁS (A kért ellenkező/másik irányba)
+            const pyramidRotationY = -0.55 + (120 * Math.PI / 180); 
 
-            // 📍 PIRAMIS Y POZÍCIÓJA (-0.82-re engedve, hogy rásüllyedjen a padlóra)
-            const pyramidPositionY = -0.82;
+            // Padló síkjának magassága a 3D térben
+            const padloY = -0.51;
 
-            // Kamera pozíciók:
+            // Kamera pozíciók
             const startCamPos = { x: 0, y: 8.5, z: 0.2 };
             const endCamPos = { x: 0, y: 1.1, z: 5.0 };
 
@@ -624,7 +624,7 @@
 
                 const padloMesh = new THREE.Mesh(padloGeo, padloMat);
                 padloMesh.rotation.x = -Math.PI / 2;
-                padloMesh.position.y = -0.51; // Padló síkja
+                padloMesh.position.y = padloY; // -0.51
                 scene.add(padloMesh);
 
                 // Bevilágítás a 3D modellhez
@@ -647,23 +647,36 @@
                     (gltf) => {
                         pyramidModel = gltf.scene;
 
-                        const box = new THREE.Box3().setFromObject(pyramidModel);
-                        const center = box.getCenter(new THREE.Vector3());
-                        const size = box.getSize(new THREE.Vector3());
+                        // 1. Hozzáadás a jelenethez, hogy a világmátrixok kiszámíthatók legyenek
+                        scene.add(pyramidModel);
 
-                        pyramidModel.position.sub(center);
+                        // 2. Kezdeti befoglaló doboz (BoundingBox) kiszámítása
+                        const initialBox = new THREE.Box3().setFromObject(pyramidModel);
+                        const initialSize = initialBox.getSize(new THREE.Vector3());
 
-                        const maxDim = Math.max(size.x, size.y, size.z);
+                        // 3. Méretezés beállítása
+                        const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z);
                         const scale = 3.6 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        // 📍 LEBEGÉS MEGSZÜNTETÉSE: Fix -0.82-es Y pozíció
-                        pyramidModel.position.y = pyramidPositionY;
-                        
-                        // 📍 ELFORGATÁS DÉLI IRÁNYBA
+                        // 4. Elforgatás alkalmazása
                         pyramidModel.rotation.y = pyramidRotationY;
 
-                        scene.add(pyramidModel);
+                        // 5. Újragenerált bounding box méretezés és forgatás után
+                        const scaledBox = new THREE.Box3().setFromObject(pyramidModel);
+                        const center = scaledBox.getCenter(new THREE.Vector3());
+
+                        // 6. Középpontosítás X és Z tengelyen
+                        pyramidModel.position.x -= center.x;
+                        pyramidModel.position.z -= center.z;
+
+                        // 7. 📍 MATEK A LEBEGÉS MEGSZÜNTETÉSÉRE:
+                        // Kiszámoljuk a modell legalsó Y pontját a világ-koordinátarendszerben:
+                        const updatedBox = new THREE.Box3().setFromObject(pyramidModel);
+                        
+                        // A padló szintre (-0.51) helyezzük, és 0.12 egységgel besüllyesztjük a fűbe
+                        const sinkDepth = 0.12; 
+                        pyramidModel.position.y = (padloY - sinkDepth) - updatedBox.min.y;
 
                         skeletonLoading.classList.add("hidden");
                     },
