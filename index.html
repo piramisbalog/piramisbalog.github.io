@@ -20,8 +20,10 @@
     <meta property="og:url" content="https://piramisbalog.github.io/">
     <meta property="og:type" content="website">
 
-    <!-- 3D Modell előtöltése -->
+    <!-- 3D Modell és Képek előtöltése -->
     <link rel="preload" href="./piramis.glb" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="./hatter.jpg" as="image">
+    <link rel="preload" href="./padlo.jpg" as="image">
 
     <style>
         * {
@@ -147,7 +149,7 @@
         .overlay {
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, transparent 35%, rgba(10, 10, 10, 0.7) 100%);
+            background: radial-gradient(circle at center, transparent 35%, rgba(10, 10, 10, 0.6) 100%);
             z-index: 1;
             pointer-events: none;
         }
@@ -450,7 +452,7 @@
         <div class="overlay"></div>
     </div>
 
-    <!-- Görgethető tartalom -->
+    <!-- Görgethető szekciók -->
     <div class="scroll-container">
         <div class="hero-section"></div>
 
@@ -525,11 +527,11 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // 📍 A PIRAMIS MODEL ELFORGATÁSA 90 FOKKAL BALRA (-0.55 rad - Math.PI / 2)
-            const pyramidRotationY = -0.55 - (Math.PI / 2); 
+            // MODEL ELFORGATÁSA
+            const pyramidRotationY = -0.55; 
 
             // Kamera pozíciók:
-            const startCamPos = { x: 0, y: 5.8, z: 1.6 }; // Lejjebbről, lágyabb szögből induló kezdőpozíció
+            const startCamPos = { x: 0, y: 8.5, z: 0.2 };
             const endCamPos = { x: 0, y: 1.1, z: 5.0 };
 
             // LookAt célpontok
@@ -540,6 +542,25 @@
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
+            // 📍 LÁGY KÖRKÖRÖS ÁTMENET (ALPHA MASK) GENERÁLÁSA A PADLÓHOZ
+            function createAlphaMaskTexture() {
+                const maskCanvas = document.createElement("canvas");
+                maskCanvas.width = 512;
+                maskCanvas.height = 512;
+                const ctx = maskCanvas.getContext("2d");
+
+                // A közepe látható (fehér), a szélek felé lassan átlátszóvá válik (fekete)
+                const gradient = ctx.createRadialGradient(256, 256, 80, 256, 256, 256);
+                gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+                gradient.addColorStop(0.6, "rgba(255, 255, 255, 0.8)");
+                gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 512, 512);
+
+                return new THREE.CanvasTexture(maskCanvas);
+            }
+
             function updateCameraAspect() {
                 if (!camera || !renderer) return;
 
@@ -547,9 +568,9 @@
                 camera.aspect = aspect;
 
                 if (aspect < 1) {
-                    camera.fov = 55; // Mobil nézet
+                    camera.fov = 55;
                 } else {
-                    camera.fov = 45; // PC nézet
+                    camera.fov = 45;
                 }
 
                 camera.updateProjectionMatrix();
@@ -558,7 +579,6 @@
 
             function initThree() {
                 scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x0a0a0a);
 
                 camera = new THREE.PerspectiveCamera(
                     55,
@@ -580,6 +600,30 @@
                 renderer.toneMappingExposure = 1.15;
 
                 updateCameraAspect();
+
+                const textureLoader = new THREE.TextureLoader();
+
+                // 📍 1. HÁTTÉR KÉP BETÖLTÉSE (hatter.jpg)
+                textureLoader.load('./hatter.jpg', (texture) => {
+                    scene.background = texture;
+                });
+
+                // 📍 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) LÁGY ÁTMENETTEL A PIRAMIS ALATT
+                const padloTexture = textureLoader.load('./padlo.jpg');
+                const alphaMask = createAlphaMaskTexture();
+
+                const padloGeo = new THREE.PlaneGeometry(12, 12);
+                const padloMat = new THREE.MeshBasicMaterial({
+                    map: padloTexture,
+                    alphaMap: alphaMask,
+                    transparent: true,
+                    depthWrite: false
+                });
+
+                const padloMesh = new THREE.Mesh(padloGeo, padloMat);
+                padloMesh.rotation.x = -Math.PI / 2;
+                padloMesh.position.y = -0.51; // A piramis talpa alatt
+                scene.add(padloMesh);
 
                 // Bevilágítás a 3D modellhez
                 const ambientLight = new THREE.AmbientLight(0xfff5e6, 1.6);
@@ -611,13 +655,7 @@
                         const scale = 3.6 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        // Igazítás az origóhoz
                         pyramidModel.position.y = -0.5 + (size.y * scale) / 2;
-
-                        // 📍 Piramis csúcsának középpontba igazítása (eltolás balra)
-                        pyramidModel.position.x = -0.75;
-
-                        // 90 fokos balra forgatás alkalmazása a Y tengelyen
                         pyramidModel.rotation.y = pyramidRotationY;
 
                         scene.add(pyramidModel);
@@ -642,7 +680,6 @@
 
                 const progress = getScrollProgress();
 
-                // Célpozíciók kiszámítása görgetés alapján
                 const targetCamX = startCamPos.x + (endCamPos.x - startCamPos.x) * progress;
                 const targetCamY = startCamPos.y + (endCamPos.y - startCamPos.y) * progress;
                 const targetCamZ = startCamPos.z + (endCamPos.z - startCamPos.z) * progress;
@@ -651,7 +688,6 @@
                 const targetLookY = startTarget.y + (endTarget.y - startTarget.y) * progress;
                 const targetLookZ = startTarget.z + (endTarget.z - startTarget.z) * progress;
 
-                // Finom LERP simítás
                 currentCam.x += (targetCamX - currentCam.x) * 0.08;
                 currentCam.y += (targetCamY - currentCam.y) * 0.08;
                 currentCam.z += (targetCamZ - currentCam.z) * 0.08;
