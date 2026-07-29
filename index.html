@@ -443,14 +443,14 @@
         const skeletonLoading = document.getElementById('skeletonLoading');
         const skeletonProgress = document.getElementById('skeletonProgress');
 
-        // 🆕 297 képkocka
-        const frameCount = 297;
+        // 🆕 294 képkocka
+        const frameCount = 294;
         const images = [];
         let imagesLoaded = 0;
         let currentFrame = -1;
         let allLoaded = false;
 
-        // 🆕 Kép mappa kiválasztása eszköz alapján
+        // Kép mappa kiválasztása eszköz alapján
         function getFrameFolder() {
             const isMobile = window.innerWidth <= 768;
             return isMobile ? 'Frames' : 'Frames1';
@@ -482,7 +482,7 @@
             }
         });
 
-        // 🆕 Képek betöltése a megfelelő mappából
+        // Képek betöltése a megfelelő mappából
         function loadImages() {
             const framePath = getFramePath();
             console.log('📁 Képek betöltése ebből a mappából: ' + getFrameFolder());
