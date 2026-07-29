@@ -527,8 +527,8 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // 📍 MODEL ELFORGATÁSA: Korábbi pozíció + 120 fok balra (kb. 1.54 radián)
-            const pyramidRotationY = -0.55 + (120 * Math.PI / 180); 
+            // 📍 MODEL ELFORGATÁSA: Korábbi pozíció - 120 fok (120 fok jobbra = -2.64 rad)
+            const pyramidRotationY = -0.55 - (120 * Math.PI / 180); 
 
             // Kamera pozíciók:
             const startCamPos = { x: 0, y: 8.5, z: 0.2 };
@@ -607,7 +607,7 @@
                     scene.background = texture;
                 });
 
-                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - Kicsit kisebb skála (8.5 x 8.5)
+                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg)
                 const padloTexture = textureLoader.load('./padlo.jpg');
                 const alphaMask = createAlphaMaskTexture();
 
@@ -621,7 +621,7 @@
 
                 const padloMesh = new THREE.Mesh(padloGeo, padloMat);
                 padloMesh.rotation.x = -Math.PI / 2;
-                padloMesh.position.y = -0.51; // A piramis talpa alatt
+                padloMesh.position.y = -0.51; // A padló síkja
                 scene.add(padloMesh);
 
                 // Bevilágítás a 3D modellhez
@@ -644,6 +644,7 @@
                     (gltf) => {
                         pyramidModel = gltf.scene;
 
+                        // A modell dobozának kiszámítása
                         const box = new THREE.Box3().setFromObject(pyramidModel);
                         const center = box.getCenter(new THREE.Vector3());
                         const size = box.getSize(new THREE.Vector3());
@@ -654,9 +655,10 @@
                         const scale = 3.6 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        pyramidModel.position.y = -0.5 + (size.y * scale) / 2;
+                        // 📍 LEBEGÉS MEGSZÜNTETÉSE: A piramis alját pontosan a padlósíkra (-0.51) helyezzük
+                        pyramidModel.position.y = -0.51 + (box.min.y < 0 ? Math.abs(box.min.y) * scale : 0);
                         
-                        // 📍 120 fokos elforgatás balra alkalmazása
+                        // 📍 ELFORGATÁS JOBBRA (120 fok)
                         pyramidModel.rotation.y = pyramidRotationY;
 
                         scene.add(pyramidModel);
