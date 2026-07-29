@@ -296,7 +296,7 @@
             text-align: center;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
                         inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            pointer-events: auto; /* JAVÍTVA: Ez engedélyezi a kattintást a kártyán belül! */
+            pointer-events: auto;
         }
 
         .info-card h2 {
@@ -309,6 +309,15 @@
             color: #ccc;
             line-height: 1.8;
             font-size: 1.1rem;
+        }
+
+        .info-card a {
+            color: #f4d03f;
+            text-decoration: none;
+        }
+
+        .info-card a:hover {
+            text-decoration: underline;
         }
 
         @media (max-width: 768px) {
@@ -413,8 +422,6 @@
         </div>
     </div>
 
-
-
     <script>
         // ========== SCROLL RESTORATION KIKAPCSOLÁSA ==========
         if ('scrollRestoration' in history) {
@@ -436,13 +443,25 @@
         const skeletonLoading = document.getElementById('skeletonLoading');
         const skeletonProgress = document.getElementById('skeletonProgress');
 
-        const frameCount = 399;
+        // 🆕 297 képkocka
+        const frameCount = 297;
         const images = [];
         let imagesLoaded = 0;
         let currentFrame = -1;
         let allLoaded = false;
 
-        // 🆕 Body magasság: 400vh = canvas(100vh) + 3 szekció(100vh each) = pont jó arány
+        // 🆕 Kép mappa kiválasztása eszköz alapján
+        function getFrameFolder() {
+            const isMobile = window.innerWidth <= 768;
+            return isMobile ? 'Frames' : 'Frames1';
+        }
+
+        function getFramePath() {
+            const folder = getFrameFolder();
+            return `https://ronika123.github.io/${folder}/frame_`;
+        }
+
+        // Body magasság: 400vh
         function setBodyHeight() {
             document.body.style.height = '400vh';
         }
@@ -463,12 +482,16 @@
             }
         });
 
+        // 🆕 Képek betöltése a megfelelő mappából
         function loadImages() {
+            const framePath = getFramePath();
+            console.log('📁 Képek betöltése ebből a mappából: ' + getFrameFolder());
+            
             for (let i = 0; i < frameCount; i++) {
                 const img = new Image();
                 const frameNumber = String(i + 1).padStart(4, '0');
                 
-                img.src = `https://ronika123.github.io/Frames/frame_${frameNumber}.webp`;
+                img.src = framePath + frameNumber + '.webp';
                 
                 img.onload = () => {
                     imagesLoaded++;
@@ -479,12 +502,12 @@
                         allLoaded = true;
                         skeletonLoading.classList.add('hidden');
                         drawFrame(0);
-                        console.log('✅ Mind a(z) ' + frameCount + ' kép betöltve!');
+                        console.log('✅ Mind a(z) ' + frameCount + ' kép betöltve a(z) ' + getFrameFolder() + ' mappából!');
                     }
                 };
                 
                 img.onerror = () => {
-                    console.warn(`⚠️ Hiányzó: frame_${frameNumber}.webp`);
+                    console.warn('⚠️ Hiányzó: ' + framePath + frameNumber + '.webp');
                     imagesLoaded++;
                     const percent = Math.round((imagesLoaded / frameCount) * 100);
                     skeletonProgress.textContent = percent + '%';
