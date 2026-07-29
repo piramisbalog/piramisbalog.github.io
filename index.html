@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Első képkocka előtöltése a frames mappából -->
+    <!-- Első képkocka előtöltése a gyors megjelenítésért -->
     <link
         rel="preload"
         as="image"
@@ -139,7 +139,7 @@
             pointer-events: none;
         }
 
-        /* Görgetés-jelző a kijelző alján */
+        /* Állandóan látható felirat a kijelző alján */
         .scroll-indicator {
             position: fixed;
             bottom: 35px;
@@ -498,7 +498,7 @@
                     📱 Függőben<br>
                     📍
                     <a
-                        href="https://maps.app.goo.gl/qzjUGYYwJE71uWdN6?g_st=ic"
+                        href="https://maps.app.goo.gl/qzjUGUGYWJE71uWdN6?g_st=ic"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -542,28 +542,31 @@
             const hamburgerBtn = document.getElementById("hamburgerBtn");
             const menuList = document.getElementById("menuList");
 
-            // Képek száma és elérési útvonala a "frames" mappán belül
             const FRAME_COUNT = 150;
             const FRAME_PATH = "./frames/frame_";
             const FRAME_EXTENSION = ".webp";
+
+            // Safari & Private Relay optimalizáció: Max 5 párhuzamos kérés
+            const MAX_CONCURRENT_DOWNLOADS = 5;
 
             const isMobile = window.matchMedia("(max-width: 768px)").matches;
             const frames = new Array(FRAME_COUNT);
 
             let loadedCount = 0;
+            let activeDownloads = 0;
+            const downloadQueue = [];
+
             let targetFrame = 0;
             let currentFrameFloat = 0;
             let lastRenderedFrame = -1;
 
             const getPixelRatio = () => Math.min(window.devicePixelRatio || 1, 1.5);
 
-            // Képkocka URL-jének előállítása (frames/frame_0001.webp - frames/frame_0150.webp)
             function getFrameUrl(index) {
                 const num = String(index + 1).padStart(4, "0");
                 return `${FRAME_PATH}${num}${FRAME_EXTENSION}`;
             }
 
-            // Canvas méretezése
             function resizeCanvas() {
                 const dpr = getPixelRatio();
                 const width = window.innerWidth;
@@ -577,23 +580,40 @@
                 ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
                 const activeIndex = Math.round(currentFrameFloat);
-                if (frames[activeIndex] && frames[activeIndex].complete) {
-                    drawFrame(activeIndex);
-                }
+                drawFrame(activeIndex);
             }
 
-            // Betöltő elrejtése
             function hideSkeleton() {
                 if (skeletonLoading && !skeletonLoading.classList.contains("hidden")) {
                     skeletonLoading.classList.add("hidden");
                 }
             }
 
+            // Keressük meg a legközelebbi már letöltött képkockát, ha a kívánt még töltődik
+            function findClosestLoadedFrame(targetIndex) {
+                if (frames[targetIndex] && frames[targetIndex].complete && frames[targetIndex].naturalWidth > 0) {
+                    return targetIndex;
+                }
+
+                for (let offset = 1; offset < FRAME_COUNT; offset++) {
+                    const left = targetIndex - offset;
+                    if (left >= 0 && frames[left] && frames[left].complete && frames[left].naturalWidth > 0) {
+                        return left;
+                    }
+                    const right = targetIndex + offset;
+                    if (right < FRAME_COUNT && frames[right] && frames[right].complete && frames[right].naturalWidth > 0) {
+                        return right;
+                    }
+                }
+                return -1;
+            }
+
             // Képkocka kirajzolása
             function drawFrame(index) {
-                const image = frames[index];
-                if (!image || !image.complete || image.naturalWidth === 0) return;
+                const validIndex = findClosestLoadedFrame(index);
+                if (validIndex === -1) return;
 
+                const image = frames[validIndex];
                 const width = window.innerWidth;
                 const height = window.innerHeight;
                 const canvasRatio = width / height;
@@ -641,10 +661,9 @@
                     ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
                 }
 
-                lastRenderedFrame = index;
+                lastRenderedFrame = validIndex;
             }
 
-            // Görgetési arány kiszámítása
             function getScrollProgress() {
                 const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
                 const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -652,7 +671,6 @@
                 return maxScroll > 0 ? Math.max(0, Math.min(1, scrollTop / maxScroll)) : 0;
             }
 
-            // Animációs ciklus
             function renderLoop() {
                 const progress = getScrollProgress();
                 targetFrame = progress * (FRAME_COUNT - 1);
@@ -666,7 +684,7 @@
 
                 const renderIndex = Math.round(currentFrameFloat);
 
-                if (renderIndex !== lastRenderedFrame && frames[renderIndex]) {
+                if (renderIndex !== lastRenderedFrame) {
                     drawFrame(renderIndex);
                 }
 
@@ -675,11 +693,22 @@
                 requestAnimationFrame(renderLoop);
             }
 
-            // Képek betöltése a "frames" mappából
-            function preloadAllFrames() {
-                for (let i = 0; i < FRAME_COUNT; i++) {
-                    const img = new Image();
-                    img.decoding = "async";
+            // Intelligens Letöltési Sor (Concurrency Queue)
+            function queueImageDownload(index) {
+                if (frames[index]) return;
+
+                const img = new Image();
+                img.decoding = "async";
+                frames[index] = img;
+
+                downloadQueue.push({ index, img });
+                processQueue();
+            }
+
+            function processQueue() {
+                while (activeDownloads < MAX_CONCURRENT_DOWNLOADS && downloadQueue.length > 0) {
+                    activeDownloads++;
+                    const { index, img } = downloadQueue.shift();
 
                     img.onload = () => {
                         loadedCount++;
@@ -687,22 +716,42 @@
                             skeletonProgress.textContent = `Képek betöltése... (${Math.round((loadedCount / FRAME_COUNT) * 100)}%)`;
                         }
 
-                        if (i === 0) {
+                        // Ha az 1. kép megvan, azonnal nyitjuk a felületet!
+                        if (index === 0) {
                             drawFrame(0);
                             hideSkeleton();
                         }
+
+                        activeDownloads--;
+                        processQueue();
                     };
 
                     img.onerror = () => {
-                        console.warn(`Nem sikerült betölteni a képet: ${getFrameUrl(i)}`);
+                        activeDownloads--;
+                        processQueue();
                     };
 
-                    img.src = getFrameUrl(i);
-                    frames[i] = img;
+                    img.src = getFrameUrl(index);
                 }
             }
 
-            // Menü gomb kezelése
+            // Szakaszos betöltési stratégia Safari / Privát átjátszóhoz
+            function startPrioritizedPreload() {
+                // 1. Az legelső képkocka töltődik le
+                queueImageDownload(0);
+
+                // 2. Kulcsképkockák letöltése (minden 5. kép: 5, 10, 15...)
+                for (let i = 5; i < FRAME_COUNT; i += 5) {
+                    queueImageDownload(i);
+                }
+
+                // 3. Hiányzó köztes képek sorbafűzése
+                for (let i = 0; i < FRAME_COUNT; i++) {
+                    queueImageDownload(i);
+                }
+            }
+
+            // Menü kezelés
             function toggleMenu() {
                 const active = menuList.classList.toggle("active");
                 hamburgerBtn.setAttribute("aria-expanded", String(active));
@@ -743,11 +792,10 @@
                 resizeCanvas();
             });
 
-            // Indítás
             function initialize() {
                 window.scrollTo(0, 0);
                 resizeCanvas();
-                preloadAllFrames();
+                startPrioritizedPreload();
                 requestAnimationFrame(renderLoop);
             }
 
