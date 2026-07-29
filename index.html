@@ -525,6 +525,9 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
+            // 📍 MODEL ELFORGATÁSA (Előre néző bejárat az alsó kamerafény felé)
+            const pyramidRotationY = Math.PI * 0.35; 
+
             // Kamera pozíciók:
             // Kezdőpozíció (Oldal teteje): Magasból felülnézet
             const startCamPos = { x: 0, y: 6.0, z: 0.1 };
@@ -613,8 +616,8 @@
                         // Igazítás az origóhoz
                         pyramidModel.position.y = -0.5 + (size.y * scale) / 2;
 
-                        // 📍 ELFORGATÁS: A bejárat és az obeliszk elölre (a kamera leereszkedési iránya felé) mutasson
-                        pyramidModel.rotation.y = -Math.PI * 0.7; // ~ -126 fokos elforgatás
+                        // Elforgatás alkalmazása
+                        pyramidModel.rotation.y = pyramidRotationY;
 
                         scene.add(pyramidModel);
 
