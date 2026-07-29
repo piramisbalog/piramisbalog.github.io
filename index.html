@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- WebM videó előtöltése -->
+    <!-- Első képkocka előtöltése a frames mappából -->
     <link
         rel="preload"
-        as="video"
-        href="./video.webm"
-        type="video/webm"
+        as="image"
+        href="./frames/frame_0001.webp"
+        type="image/webp"
+        fetchpriority="high"
     >
 
     <title>Piramis - Műholdtól a Bejáratig</title>
@@ -32,7 +33,7 @@
             overflow-x: hidden;
         }
 
-        /* Navigáció és Menü stílusok */
+        /* Navigáció és Menü */
         .menu-container {
             position: fixed;
             top: 25px;
@@ -110,7 +111,7 @@
             color: #f4d03f;
         }
 
-        /* Vászon (Canvas) és Háttér */
+        /* Vászon (Canvas) */
         .canvas-container {
             position: fixed;
             inset: 0;
@@ -138,7 +139,7 @@
             pointer-events: none;
         }
 
-        /* Görgetés-jelző animáció */
+        /* Görgetés-jelző a kijelző alján */
         .scroll-indicator {
             position: fixed;
             bottom: 35px;
@@ -148,6 +149,7 @@
             color: white;
             font-size: 0.9rem;
             opacity: 1;
+            visibility: visible;
             animation: bounce 2s infinite;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
             pointer-events: none;
@@ -157,8 +159,6 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(212, 165, 116, 0.3);
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            will-change: transform, opacity;
         }
 
         @keyframes bounce {
@@ -194,7 +194,7 @@
             box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
         }
 
-        /* Betöltő képernyő (Skeleton) */
+        /* Betöltő képernyő */
         .skeleton-loading {
             position: fixed;
             inset: 0;
@@ -287,23 +287,24 @@
             100% { background-position: 200% 0; }
         }
 
-        /* Tartalmi szekciók */
-        .hero-section {
-            height: 100vh;
+        .scroll-container {
             position: relative;
             z-index: 2;
+        }
+
+        .hero-section {
+            height: 100vh;
             pointer-events: none;
         }
 
         .content-section {
-            min-height: 100vh;
+            min-height: 120vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 2rem;
             background: transparent;
             position: relative;
-            z-index: 2;
             pointer-events: none;
         }
 
@@ -352,7 +353,6 @@
             margin: 20px 0;
         }
 
-        /* Mobil nézet finomhangolása */
         @media (max-width: 768px) {
             .info-card {
                 padding: 2rem 1.5rem;
@@ -420,11 +420,11 @@
         </div>
 
         <div class="skeleton-progress" id="skeletonProgress">
-            Videó betöltése...
+            Képek betöltése...
         </div>
     </div>
 
-    <!-- Navigációs menü -->
+    <!-- Navigáció -->
     <nav class="menu-container" aria-label="Főmenü">
         <div
             class="hamburger-icon"
@@ -452,83 +452,75 @@
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
-    <!-- Görgetés-jelző -->
+    <!-- Állandóan látható felirat -->
     <div class="scroll-indicator" id="scrollIndicator">
-        ↓ Görgess lefelé ↓
+        ↓ Görgess lejjebb ↓
     </div>
 
-    <!-- Canvas megjelenítő -->
+    <!-- Canvas -->
     <div class="canvas-container">
         <canvas id="mainCanvas"></canvas>
         <div class="overlay"></div>
     </div>
 
-    <!-- Rejtett videó elem a frame-ek kinyeréséhez -->
-    <video
-        id="scrollVideo"
-        src="./video.webm"
-        preload="auto"
-        muted
-        playsinline
-        webkit-playsinline
-        style="display: none;"
-    ></video>
+    <!-- Görgethető tartalom -->
+    <div class="scroll-container">
+        <div class="hero-section"></div>
 
-    <div class="hero-section"></div>
+        <section class="content-section" id="bemutatkozas">
+            <div class="info-card">
+                <h2>Bemutatkozás</h2>
+                <p>
+                    A kamera távolról közelít, felfedi a piramis monumentális
+                    méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi
+                    Egyiptom rejtett csodáit.
+                </p>
+            </div>
+        </section>
 
-    <section class="content-section" id="bemutatkozas">
-        <div class="info-card">
-            <h2>Bemutatkozás</h2>
-            <p>
-                A kamera távolról közelít, felfedi a piramis monumentális
-                méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi
-                Egyiptom rejtett csodáit.
-            </p>
-        </div>
-    </section>
+        <section class="content-section" id="multunk">
+            <div class="info-card">
+                <h2>Múltunk</h2>
+                <p>
+                    Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit.
+                    Spirálozva ereszkedés közben minden oldalról bemutatjuk az
+                    építményt, feltárva szimmetriáját.
+                </p>
+            </div>
+        </section>
 
-    <section class="content-section" id="multunk">
-        <div class="info-card">
-            <h2>Múltunk</h2>
-            <p>
-                Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit.
-                Spirálozva ereszkedés közben minden oldalról bemutatjuk az
-                építményt, feltárva szimmetriáját.
-            </p>
-        </div>
-    </section>
+        <section class="content-section" id="elerhetoseg">
+            <div class="info-card">
+                <h2>📬 Elérhetőség</h2>
 
-    <section class="content-section" id="elerhetoseg">
-        <div class="info-card">
-            <h2>📬 Elérhetőség</h2>
+                <p>
+                    📧 balogpiramis@gmail.com<br>
+                    📱 Függőben<br>
+                    📍
+                    <a
+                        href="https://maps.app.goo.gl/qzjUGYYwJE71uWdN6?g_st=ic"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Térkép megnyitása
+                    </a>
+                </p>
 
-            <p>
-                📧 balogpiramis@gmail.com<br>
-                📱 Függőben<br>
-                📍
-                <a
-                    href="https://maps.app.goo.gl/qzjUGYYwJE71uWdN6?g_st=ic"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Térkép megnyitása
-                </a>
-            </p>
+                <iframe
+                    class="map-frame"
+                    src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed"
+                    title="Balogpiramis helye a térképen"
+                    loading="lazy"
+                    allowfullscreen
+                    referrerpolicy="no-referrer-when-downgrade"
+                ></iframe>
 
-            <iframe
-                class="map-frame"
-                src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed"
-                title="Balogpiramis helye a térképen"
-                loading="lazy"
-                allowfullscreen
-                referrerpolicy="no-referrer-when-downgrade"
-            ></iframe>
-
-            <p>
-                Kövess minket, és légy részese az ősi titkok feltárásának!
-            </p>
-        </div>
-    </section>
+                <p>
+                    Kövess minket, és légy részese az ősi titkok feltárásának!
+                </p>
+            </div>
+        </section>
+    </div>
 
     <script>
         (() => {
@@ -544,24 +536,34 @@
                 desynchronized: true
             });
 
-            const video = document.getElementById("scrollVideo");
             const progressBar = document.getElementById("progressBar");
             const skeletonLoading = document.getElementById("skeletonLoading");
             const skeletonProgress = document.getElementById("skeletonProgress");
-            const scrollIndicator = document.getElementById("scrollIndicator");
             const hamburgerBtn = document.getElementById("hamburgerBtn");
             const menuList = document.getElementById("menuList");
 
-            const isMobile = window.matchMedia("(max-width: 768px)").matches;
+            // Képek száma és elérési útvonala a "frames" mappán belül
+            const FRAME_COUNT = 150;
+            const FRAME_PATH = "./frames/frame_";
+            const FRAME_EXTENSION = ".webp";
 
-            let isVideoReady = false;
-            let targetTime = 0;
-            let currentTime = 0;
-            let animationFrameId = null;
+            const isMobile = window.matchMedia("(max-width: 768px)").matches;
+            const frames = new Array(FRAME_COUNT);
+
+            let loadedCount = 0;
+            let targetFrame = 0;
+            let currentFrameFloat = 0;
+            let lastRenderedFrame = -1;
 
             const getPixelRatio = () => Math.min(window.devicePixelRatio || 1, 1.5);
 
-            // Canvas átméretezése
+            // Képkocka URL-jének előállítása (frames/frame_0001.webp - frames/frame_0150.webp)
+            function getFrameUrl(index) {
+                const num = String(index + 1).padStart(4, "0");
+                return `${FRAME_PATH}${num}${FRAME_EXTENSION}`;
+            }
+
+            // Canvas méretezése
             function resizeCanvas() {
                 const dpr = getPixelRatio();
                 const width = window.innerWidth;
@@ -574,76 +576,75 @@
 
                 ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-                if (isVideoReady) {
-                    drawVideoFrame();
+                const activeIndex = Math.round(currentFrameFloat);
+                if (frames[activeIndex] && frames[activeIndex].complete) {
+                    drawFrame(activeIndex);
                 }
             }
 
-            // Betöltő képernyő elrejtése
+            // Betöltő elrejtése
             function hideSkeleton() {
-                if (!skeletonLoading.classList.contains("hidden")) {
-                    skeletonProgress.textContent = "Kész";
+                if (skeletonLoading && !skeletonLoading.classList.contains("hidden")) {
                     skeletonLoading.classList.add("hidden");
                 }
             }
 
-            // Videó képkockájának kirajzolása a Canvas-re
-            function drawVideoFrame() {
-                if (!video.videoWidth || !video.videoHeight) return;
+            // Képkocka kirajzolása
+            function drawFrame(index) {
+                const image = frames[index];
+                if (!image || !image.complete || image.naturalWidth === 0) return;
 
                 const width = window.innerWidth;
                 const height = window.innerHeight;
                 const canvasRatio = width / height;
-                const videoRatio = video.videoWidth / video.videoHeight;
+                const imageRatio = image.naturalWidth / image.naturalHeight;
 
                 ctx.fillStyle = "#000";
                 ctx.fillRect(0, 0, width, height);
 
                 let coverWidth, coverHeight, coverX, coverY;
 
-                if (videoRatio > canvasRatio) {
+                if (imageRatio > canvasRatio) {
                     coverHeight = height;
-                    coverWidth = coverHeight * videoRatio;
+                    coverWidth = coverHeight * imageRatio;
                     coverX = (width - coverWidth) / 2;
                     coverY = 0;
                 } else {
                     coverWidth = width;
-                    coverHeight = coverWidth / videoRatio;
+                    coverHeight = coverWidth / imageRatio;
                     coverX = 0;
                     coverY = (height - coverHeight) / 2;
                 }
 
                 if (isMobile) {
-                    // Mobilon közvetlen kirajzolás a jobb teljesítményért
-                    ctx.drawImage(video, coverX, coverY, coverWidth, coverHeight);
+                    ctx.drawImage(image, coverX, coverY, coverWidth, coverHeight);
                 } else {
-                    // Asztali nézetben homályosított háttér + éles központi videó
                     ctx.save();
                     ctx.filter = "blur(12px) brightness(0.45)";
-                    ctx.drawImage(video, coverX, coverY, coverWidth, coverHeight);
+                    ctx.drawImage(image, coverX, coverY, coverWidth, coverHeight);
                     ctx.restore();
 
                     let drawWidth, drawHeight, offsetX, offsetY;
 
-                    if (videoRatio > canvasRatio) {
+                    if (imageRatio > canvasRatio) {
                         drawWidth = width;
-                        drawHeight = drawWidth / videoRatio;
+                        drawHeight = drawWidth / imageRatio;
                         offsetX = 0;
                         offsetY = (height - drawHeight) / 2;
                     } else {
                         drawHeight = height;
-                        drawWidth = drawHeight * videoRatio;
+                        drawWidth = drawHeight * imageRatio;
                         offsetX = (width - drawWidth) / 2;
                         offsetY = 0;
                     }
 
-                    ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight);
+                    ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
                 }
 
-                hideSkeleton();
+                lastRenderedFrame = index;
             }
 
-            // Görgetési progresszió kiszámítása (0.0 - 1.0)
+            // Görgetési arány kiszámítása
             function getScrollProgress() {
                 const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
                 const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -651,37 +652,57 @@
                 return maxScroll > 0 ? Math.max(0, Math.min(1, scrollTop / maxScroll)) : 0;
             }
 
-            // Folyamatos, simított lerp animációs ciklus a görgetéshez
-            function updateLoop() {
-                if (isVideoReady && video.duration) {
-                    // Cél időpont frissítése a görgetés alapján
-                    const progress = getScrollProgress();
-                    targetTime = progress * video.duration;
+            // Animációs ciklus
+            function renderLoop() {
+                const progress = getScrollProgress();
+                targetFrame = progress * (FRAME_COUNT - 1);
 
-                    // Sima lerp átmenet a gördülékeny mozgásért
-                    const diff = targetTime - currentTime;
-                    if (Math.abs(diff) > 0.001) {
-                        currentTime += diff * 0.25; // 0.25 = simítás mértéke
-                        video.currentTime = currentTime;
-                    }
-
-                    progressBar.style.transform = `scaleX(${progress})`;
-
-                    // Görgetés-jelző elhalványítása
-                    if (scrollIndicator) {
-                        const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-                        const opacity = Math.max(0, 1 - scrollTop / 150);
-                        scrollIndicator.style.opacity = String(opacity);
-                        scrollIndicator.style.visibility = opacity > 0.01 ? "visible" : "hidden";
-                    }
-
-                    drawVideoFrame();
+                const diff = targetFrame - currentFrameFloat;
+                if (Math.abs(diff) > 0.001) {
+                    currentFrameFloat += diff * 0.15;
+                } else {
+                    currentFrameFloat = targetFrame;
                 }
 
-                animationFrameId = requestAnimationFrame(updateLoop);
+                const renderIndex = Math.round(currentFrameFloat);
+
+                if (renderIndex !== lastRenderedFrame && frames[renderIndex]) {
+                    drawFrame(renderIndex);
+                }
+
+                progressBar.style.transform = `scaleX(${progress})`;
+
+                requestAnimationFrame(renderLoop);
             }
 
-            // Navigációs menü kezelése
+            // Képek betöltése a "frames" mappából
+            function preloadAllFrames() {
+                for (let i = 0; i < FRAME_COUNT; i++) {
+                    const img = new Image();
+                    img.decoding = "async";
+
+                    img.onload = () => {
+                        loadedCount++;
+                        if (skeletonProgress) {
+                            skeletonProgress.textContent = `Képek betöltése... (${Math.round((loadedCount / FRAME_COUNT) * 100)}%)`;
+                        }
+
+                        if (i === 0) {
+                            drawFrame(0);
+                            hideSkeleton();
+                        }
+                    };
+
+                    img.onerror = () => {
+                        console.warn(`Nem sikerült betölteni a képet: ${getFrameUrl(i)}`);
+                    };
+
+                    img.src = getFrameUrl(i);
+                    frames[i] = img;
+                }
+            }
+
+            // Menü gomb kezelése
             function toggleMenu() {
                 const active = menuList.classList.toggle("active");
                 hamburgerBtn.setAttribute("aria-expanded", String(active));
@@ -722,34 +743,12 @@
                 resizeCanvas();
             });
 
-            // Videó betöltésének eseménykezelői
-            video.addEventListener("loadedmetadata", () => {
-                isVideoReady = true;
-                resizeCanvas();
-                video.currentTime = 0;
-            });
-
-            video.addEventListener("seeked", () => {
-                drawVideoFrame();
-            });
-
-            video.addEventListener("canplaythrough", () => {
-                isVideoReady = true;
-                hideSkeleton();
-            });
-
-            // Inicializálás
+            // Indítás
             function initialize() {
                 window.scrollTo(0, 0);
                 resizeCanvas();
-
-                skeletonProgress.textContent = "Videó betöltése...";
-
-                // Videó kényszerített betöltése
-                video.load();
-
-                // Animációs ciklus indítása
-                animationFrameId = requestAnimationFrame(updateLoop);
+                preloadAllFrames();
+                requestAnimationFrame(renderLoop);
             }
 
             initialize();
