@@ -148,7 +148,7 @@
         .overlay {
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.35) 100%);
+            background: radial-gradient(circle at center, transparent 45%, rgba(0, 0, 0, 0.4) 100%);
             z-index: 1;
             pointer-events: none;
         }
@@ -486,7 +486,7 @@
                     📱 Függőben<br>
                     📍
                     <a
-                        href="https://maps.app.goo.gl/qzjUGYYwJE71uWdN6?g_st=ic"
+                        href="https://maps.app.goo.gl/qzjUGYWwJE71uWdN6?g_st=ic"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -525,11 +525,30 @@
             const menuList = document.getElementById("menuList");
 
             // Three.js Alapváltozók
-            let scene, camera, renderer, pyramidModel, skySphere;
+            let scene, camera, renderer, pyramidModel, panoramaTexture;
             let targetRotationY = 0;
             let currentRotationY = 0;
-            let targetZoomZ = 5.5;
-            let currentZoomZ = 5.5;
+            let targetZoomZ = 5.2;
+            let currentZoomZ = 5.2;
+
+            // Sugaras kontakt-árnyék generálása (Pl. piramis alatti természetes talajárnyék)
+            function createContactShadowTexture() {
+                const shadowCanvas = document.createElement("canvas");
+                shadowCanvas.width = 512;
+                shadowCanvas.height = 512;
+                const c = shadowCanvas.getContext("2d");
+
+                const gradient = c.createRadialGradient(256, 256, 0, 256, 256, 256);
+                gradient.addColorStop(0, "rgba(0, 0, 0, 0.82)");
+                gradient.addColorStop(0.35, "rgba(0, 0, 0, 0.45)");
+                gradient.addColorStop(0.7, "rgba(0, 0, 0, 0.12)");
+                gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+                c.fillStyle = gradient;
+                c.fillRect(0, 0, 512, 512);
+
+                return new THREE.CanvasTexture(shadowCanvas);
+            }
 
             function updateCameraAspect() {
                 if (!camera || !renderer) return;
@@ -538,9 +557,9 @@
                 camera.aspect = aspect;
 
                 if (aspect < 1) {
-                    camera.fov = 56;
+                    camera.fov = 50;
                 } else {
-                    camera.fov = 42;
+                    camera.fov = 38;
                 }
 
                 camera.updateProjectionMatrix();
@@ -553,14 +572,14 @@
 
                 // 2. Kamera
                 camera = new THREE.PerspectiveCamera(
-                    42,
+                    38,
                     window.innerWidth / window.innerHeight,
                     0.1,
-                    2000
+                    1000
                 );
-                camera.position.set(0, 0.4, 5.5);
+                camera.position.set(0, 0.1, 5.2);
 
-                // 3. Renderelő
+                // 3. Renderelő beállításai
                 renderer = new THREE.WebGLRenderer({
                     canvas: canvas,
                     antialias: true,
@@ -569,42 +588,46 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.05;
+                renderer.toneMappingExposure = 1.1;
 
                 updateCameraAspect();
 
-                // 4. 360 Fokos Gömbpanoráma (SkySphere) Létrehozása
-                const sphereGeometry = new THREE.SphereGeometry(500, 60, 40);
-                // A gömböt belülről kell megvilágítani/látni
-                sphereGeometry.scale(-1, 1, 1);
-
+                // 4. 360° Equirectangular Panoráma Háttér beállítása (NEM zúmól, végtelenített!)
                 const textureLoader = new THREE.TextureLoader();
                 textureLoader.load('./panorama.jpg', (texture) => {
-                    texture.encoding = THREE.sRGBEncoding;
-
-                    const sphereMaterial = new THREE.MeshBasicMaterial({
-                        map: texture
-                    });
-
-                    skySphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-                    // Finom alapforgatás, hogy a repceföld/házak legjobb szöge nézzen előre
-                    skySphere.rotation.y = Math.PI / 4;
-                    scene.add(skySphere);
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                    scene.background = texture;
+                    scene.environment = texture; // A piramis megvilágítása a panoráma színeiből!
+                    panoramaTexture = texture;
                 });
 
-                // 5. Fények a 3D Piramis Modellhez
-                const ambientLight = new THREE.AmbientLight(0xfff8eb, 1.8);
+                // 5. Napfény és Bevilágítás
+                const ambientLight = new THREE.AmbientLight(0xfff7ea, 1.6);
                 scene.add(ambientLight);
 
-                const mainSun = new THREE.DirectionalLight(0xfff0dd, 2.0);
-                mainSun.position.set(6, 12, 8);
+                const mainSun = new THREE.DirectionalLight(0xfff0dd, 2.2);
+                mainSun.position.set(5, 10, 5);
                 scene.add(mainSun);
 
                 const fillLight = new THREE.DirectionalLight(0xaac4d8, 0.8);
-                fillLight.position.set(-6, 4, -4);
+                fillLight.position.set(-5, 4, -4);
                 scene.add(fillLight);
 
-                // 6. 3D Piramis Modell Betöltése
+                // 6. Kontakt Árnyék a Piramis Alá (Nem lebeg többé!)
+                const shadowTex = createContactShadowTexture();
+                const shadowGeo = new THREE.PlaneGeometry(6, 6);
+                const shadowMat = new THREE.MeshBasicMaterial({
+                    map: shadowTex,
+                    transparent: true,
+                    opacity: 0.75,
+                    depthWrite: false
+                });
+                const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+                shadowMesh.rotation.x = -Math.PI / 2;
+                shadowMesh.position.y = -0.61;
+                scene.add(shadowMesh);
+
+                // 7. 3D Piramis Modell Betöltése
                 const loader = new THREE.GLTFLoader();
 
                 loader.load(
@@ -619,11 +642,11 @@
                         pyramidModel.position.sub(center);
 
                         const maxDim = Math.max(size.x, size.y, size.z);
-                        const scale = 3.5 / maxDim;
+                        const scale = 3.4 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        // Igazítás a panoráma fűszintjéhez
-                        pyramidModel.position.y = -0.55 + (size.y * scale) / 2;
+                        // A piramis pontosan a talajvonalra és az árnyékra ül
+                        pyramidModel.position.y = -0.6 + (size.y * scale) / 2;
 
                         scene.add(pyramidModel);
 
@@ -650,26 +673,25 @@
                 // Fél fordulat (180 fok = Math.PI) a görgetés teljes ideje alatt
                 targetRotationY = progress * Math.PI;
 
-                // Távolság finomhangolása görgetéskor
-                targetZoomZ = 5.5 - progress * 1.8;
+                // Távolság állítása
+                targetZoomZ = 5.2 - progress * 1.5;
 
                 currentRotationY += (targetRotationY - currentRotationY) * 0.1;
                 currentZoomZ += (targetZoomZ - currentZoomZ) * 0.1;
 
-                // SZINKRONIZÁLT MOZGÁS: A Piramis és a 360 Panorama Gömb EGYÜTT forog!
                 if (pyramidModel) {
                     pyramidModel.rotation.y = currentRotationY;
                 }
 
-                if (skySphere) {
-                    // A panoráma gömb pontosan leköveti a forgást a tökéletes háttér-illeszkedésért
-                    skySphere.rotation.y = (Math.PI / 4) + currentRotationY;
+                // A 360° panoráma háttér szervesen és élesen forog a modell mögött!
+                if (panoramaTexture) {
+                    panoramaTexture.offset.x = (currentRotationY / (Math.PI * 2)) % 1;
                 }
 
                 if (camera) {
                     camera.position.z = currentZoomZ;
-                    camera.position.y = 0.4;
-                    camera.lookAt(0, 0.2, 0);
+                    camera.position.y = 0.1;
+                    camera.lookAt(0, -0.1, 0);
                 }
 
                 progressBar.style.transform = `scaleX(${progress})`;
