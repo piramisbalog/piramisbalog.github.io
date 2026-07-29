@@ -510,58 +510,32 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // MODEL ELFORGATÁSA
-            const pyramidRotationY = 0.5; 
+            // Kamera alapértelmezett pozíciói
+            const startCamPos = { x: 0, y: 7.0, z: 0.1 };
+            const endCamPos = { x: 0, y: 1.5, z: 4.5 };
 
-            // Padló síkjának magassága a 3D térben
-            const padloY = -0.51;
-
-            // Kamera pozíciók
-            const startCamPos = { x: 0, y: 8.5, z: 0.2 };
-            const endCamPos = { x: 0, y: 1.1, z: 5.0 };
-
-            // LookAt célpontok
             const startTarget = { x: 0, y: 0, z: 0 };
-            const endTarget = { x: 0, y: 0.2, z: 0.1 };
+            const endTarget = { x: 0, y: 0, z: 0 };
 
-            // Állapotváltozók LERP simításhoz
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
-            // LÁGY KÖRKÖRÖS ÁTMENET (ALPHA MASK) GENERÁLÁSA A PADLÓHOZ
+            // Lágy széli átmenet a padlóhoz
             function createAlphaMaskTexture() {
                 const maskCanvas = document.createElement("canvas");
                 maskCanvas.width = 512;
                 maskCanvas.height = 512;
                 const ctx = maskCanvas.getContext("2d");
 
-                const gradient = ctx.createRadialGradient(256, 256, 100, 256, 256, 256);
+                const gradient = ctx.createRadialGradient(256, 256, 120, 256, 256, 256);
                 gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(0.7, "rgba(255, 255, 255, 0.85)");
+                gradient.addColorStop(0.7, "rgba(255, 255, 255, 0.8)");
                 gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
 
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, 512, 512);
 
                 return new THREE.CanvasTexture(maskCanvas);
-            }
-
-            // KONTAKT-ÁRNYÉK MASK GENERÁLÁSA A MODEL ALÁ
-            function createShadowTexture() {
-                const shadowCanvas = document.createElement("canvas");
-                shadowCanvas.width = 512;
-                shadowCanvas.height = 512;
-                const ctx = shadowCanvas.getContext("2d");
-
-                const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
-                gradient.addColorStop(0, "rgba(0, 0, 0, 0.9)");
-                gradient.addColorStop(0.4, "rgba(0, 0, 0, 0.6)");
-                gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, 512, 512);
-
-                return new THREE.CanvasTexture(shadowCanvas);
             }
 
             function updateCameraAspect() {
@@ -611,11 +585,11 @@
                     scene.background = texture;
                 });
 
-                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg)
+                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - Origónál elhelyezve (0, 0, 0)
                 const padloTexture = textureLoader.load('./padlo.jpg');
                 const alphaMask = createAlphaMaskTexture();
 
-                const padloGeo = new THREE.PlaneGeometry(16, 16);
+                const padloGeo = new THREE.PlaneGeometry(10, 10);
                 const padloMat = new THREE.MeshBasicMaterial({
                     map: padloTexture,
                     alphaMap: alphaMask,
@@ -624,25 +598,11 @@
                 });
 
                 const padloMesh = new THREE.Mesh(padloGeo, padloMat);
-                padloMesh.rotation.x = -Math.PI / 2;
-                padloMesh.position.y = padloY; // -0.51
+                padloMesh.rotation.x = -Math.PI / 2; // Vízszintes síkba fektetve
+                padloMesh.position.set(0, 0, 0);    // Kinullázott pozíció!
                 scene.add(padloMesh);
 
-                // 3. KONTAKT-ÁRNYÉK SÍK A PIRAMIS ALATT
-                const shadowTex = createShadowTexture();
-                const shadowGeo = new THREE.PlaneGeometry(6, 6);
-                const shadowMat = new THREE.MeshBasicMaterial({
-                    map: shadowTex,
-                    transparent: true,
-                    opacity: 0.75,
-                    depthWrite: false
-                });
-                const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-                shadowMesh.rotation.x = -Math.PI / 2;
-                shadowMesh.position.y = padloY + 0.01;
-                scene.add(shadowMesh);
-
-                // Bevilágítás a 3D modellhez
+                // Bevilágítás
                 const ambientLight = new THREE.AmbientLight(0xfff5e6, 1.6);
                 scene.add(ambientLight);
 
@@ -654,7 +614,7 @@
                 fillLight.position.set(-6, 4, -5);
                 scene.add(fillLight);
 
-                // 3D Piramis Modell Betöltése
+                // 3D Piramis Modell Betöltése - KINULLÁZVA!
                 const loader = new THREE.GLTFLoader();
 
                 loader.load(
@@ -662,33 +622,21 @@
                     (gltf) => {
                         pyramidModel = gltf.scene;
 
-                        scene.add(pyramidModel);
-
+                        // Tiszta alaphelyzet
                         pyramidModel.position.set(0, 0, 0);
                         pyramidModel.rotation.set(0, 0, 0);
                         pyramidModel.scale.set(1, 1, 1);
-                        pyramidModel.updateMatrixWorld(true);
 
-                        const initialBox = new THREE.Box3().setFromObject(pyramidModel);
-                        const initialSize = initialBox.getSize(new THREE.Vector3());
-
-                        const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z);
+                        // Egyenletes méretezés
+                        const box = new THREE.Box3().setFromObject(pyramidModel);
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDim = Math.max(size.x, size.y, size.z);
                         const scale = 3.6 / maxDim;
+                        
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        // ELFORGATÁS
-                        pyramidModel.rotation.y = pyramidRotationY;
-                        pyramidModel.updateMatrixWorld(true);
-
-                        const scaledBox = new THREE.Box3().setFromObject(pyramidModel);
-                        const center = scaledBox.getCenter(new THREE.Vector3());
-
-                        pyramidModel.position.x -= center.x;
-                        pyramidModel.position.z -= center.z;
-
-                        // Rásüllyesztés a talajra
-                        const sinkDepth = 0.15; 
-                        pyramidModel.position.y = (padloY - sinkDepth) - (scaledBox.min.y - pyramidModel.position.y);
+                        // Modell hozzáadása közvetlenül az origóba (0, 0, 0)
+                        scene.add(pyramidModel);
 
                         skeletonLoading.classList.add("hidden");
                     },
