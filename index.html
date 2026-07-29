@@ -434,14 +434,15 @@
                📱 Függőben<br>
                📍 <a href="https://maps.app.goo.gl/qzjUGYYwJE71uWdN6?g_st=ic" target="_blank" rel="noopener noreferrer">Térkép megnyitása</a><br><br>
                
+               <!-- JAVÍTOTT GOOGLE MAPS IFRAME -->
                <iframe 
-                 src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d42626.7595107375!2d19.067045690441795!3d48.1069085977825!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zNDjCsDA1JzUwLjYiTiAxOcKwMDYnNDtwNyJF!5e0!3m2!1shu!2ssk!4v1785273582509!5m2!1shu!2ssk" 
+                 src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed" 
                  width="100%" 
-                 height="200" 
-                 style="border:0; border-radius: 8px; margin-top: 10px; margin-bottom: 10px;" 
+                 height="220" 
+                 style="border:0; border-radius: 12px; margin-top: 10px; margin-bottom: 10px;" 
                  allowfullscreen="" 
                  loading="lazy" 
-                 referrerpolicy="strict-origin-when-cross-origin">
+                 referrerpolicy="no-referrer-when-downgrade">
                </iframe><br><br>
                
                Kövess minket, és légy részese az ősi titkok feltárásának!</p>
@@ -538,7 +539,7 @@
             const imgRatio = img.width / img.height;
             const isMobile = window.innerWidth <= 768;
 
-            // 1. BLURRED COVER HÁTTÉR SZÁMÍTÁSA (Kitölti a teljes képernyőt)
+            // 1. BLURRED COVER HÁTTÉR SZÁMÍTÁSA
             let bgW, bgH, bgX, bgY;
             if (imgRatio > canvasRatio) {
                 bgH = canvas.height;
@@ -552,7 +553,7 @@
                 bgY = (canvas.height - bgH) / 2;
             }
 
-            // Asztali gépen elmosódott hátteret rajzolunk a fekete sávok helyére
+            // Asztali gépen elmosódott hátteret rajzolunk
             if (!isMobile) {
                 ctx.save();
                 ctx.filter = 'blur(25px) brightness(0.45) contrast(1.1)';
@@ -564,13 +565,13 @@
             let drawWidth, drawHeight, offsetX, offsetY;
 
             if (isMobile) {
-                // MOBILON: COVER MÓD -> Automatika belenagyít a kép közepébe, kitöltve a kijelzőt
+                // MOBILON: COVER MÓD -> Automatika belenagyít a kép közepébe
                 drawWidth = bgW;
                 drawHeight = bgH;
                 offsetX = bgX;
                 offsetY = bgY;
             } else {
-                // ASZTALI GÉPEN: CONTAIN MÓD -> A teljes 16:9-es kép élesen látszik középen
+                // ASZTALI GÉPEN: CONTAIN MÓD -> A teljes kép látszik középen
                 if (imgRatio > canvasRatio) {
                     drawWidth = canvas.width;
                     drawHeight = drawWidth / imgRatio;
@@ -597,7 +598,6 @@
             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
             
-            // "Görgess lefelé" kijelző elhalványítása görgetéskor
             if (scrollIndicator) {
                 const fadeOpacity = Math.max(0, 1 - (scrollTop / 150));
                 scrollIndicator.style.opacity = fadeOpacity;
