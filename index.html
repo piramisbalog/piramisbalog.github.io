@@ -527,8 +527,8 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // 📍 KORRIGÁLT ELFORGATÁS (A kért ellenkező/másik irányba)
-            const pyramidRotationY = -0.55 + (120 * Math.PI / 180); 
+            // 📍 MODEL ELFORGATÁSA (+180 fok fordulat)
+            const pyramidRotationY = -0.55 - (120 * Math.PI / 180) + Math.PI; 
 
             // Padló síkjának magassága a 3D térben
             const padloY = -0.51;
@@ -647,35 +647,27 @@
                     (gltf) => {
                         pyramidModel = gltf.scene;
 
-                        // 1. Hozzáadás a jelenethez, hogy a világmátrixok kiszámíthatók legyenek
                         scene.add(pyramidModel);
 
-                        // 2. Kezdeti befoglaló doboz (BoundingBox) kiszámítása
                         const initialBox = new THREE.Box3().setFromObject(pyramidModel);
                         const initialSize = initialBox.getSize(new THREE.Vector3());
 
-                        // 3. Méretezés beállítása
                         const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z);
                         const scale = 3.6 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        // 4. Elforgatás alkalmazása
+                        // 📍 ELFORGATÁS (+180 FOK)
                         pyramidModel.rotation.y = pyramidRotationY;
 
-                        // 5. Újragenerált bounding box méretezés és forgatás után
                         const scaledBox = new THREE.Box3().setFromObject(pyramidModel);
                         const center = scaledBox.getCenter(new THREE.Vector3());
 
-                        // 6. Középpontosítás X és Z tengelyen
                         pyramidModel.position.x -= center.x;
                         pyramidModel.position.z -= center.z;
 
-                        // 7. 📍 MATEK A LEBEGÉS MEGSZÜNTETÉSÉRE:
-                        // Kiszámoljuk a modell legalsó Y pontját a világ-koordinátarendszerben:
+                        // 📍 LEBEGÉS MEGSZÜNTETÉSE: Mélyebb süllyesztés (0.32 egység) a talajba
                         const updatedBox = new THREE.Box3().setFromObject(pyramidModel);
-                        
-                        // A padló szintre (-0.51) helyezzük, és 0.12 egységgel besüllyesztjük a fűbe
-                        const sinkDepth = 0.12; 
+                        const sinkDepth = 0.32; 
                         pyramidModel.position.y = (padloY - sinkDepth) - updatedBox.min.y;
 
                         skeletonLoading.classList.add("hidden");
