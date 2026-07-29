@@ -4,28 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- CÍMSOR: Piramis Balog keresőoptimális címsor -->
     <title>Piramis Balog - Műholdtól a Bejáratig | Hivatalos Oldal</title>
 
-    <!-- SEO META CÍMKÉK -->
     <meta name="description" content="Balog Piramis hivatalos interaktív 3D weboldala. Fedezd fel az ősi Egyiptom rejtett csodáit a műholdas nézettől a bejáratig valós idejű 3D modellel.">
     <meta name="keywords" content="piramis balog, balog piramis, piramisbalog, egyiptom piramis, balogpiramis.github.io">
     <meta name="author" content="Balog Piramis">
     <meta name="robots" content="index, follow">
 
-    <!-- KANONIKUS LINK -->
     <link rel="canonical" href="https://piramisbalog.github.io/">
 
-    <!-- GOOGLE SITE VERIFICATION META -->
     <meta name="google-site-verification" content="google57f4eed80b0aa14b">
 
-    <!-- OPEN GRAPH CÍMKÉK -->
     <meta property="og:title" content="Piramis Balog - Műholdtól a Bejáratig">
     <meta property="og:description" content="Balog Piramis hivatalos interaktív 3D weboldala.">
     <meta property="og:url" content="https://piramisbalog.github.io/">
     <meta property="og:type" content="website">
 
-    <!-- 3D Modell előtöltése -->
     <link rel="preload" href="./piramis.glb" as="fetch" crossorigin="anonymous">
 
     <style>
@@ -152,7 +146,7 @@
         .overlay {
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%);
+            background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
             z-index: 1;
             pointer-events: none;
         }
@@ -398,8 +392,9 @@
         }
     </style>
 
-    <!-- Three.js és GLTFLoader 3D könyvtárak CDN-ről -->
+    <!-- Three.js, Sky Shader és GLTFLoader CDN-ről -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Sky.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 
@@ -529,16 +524,48 @@
             const menuList = document.getElementById("menuList");
 
             // Three.js Alapváltozók
-            let scene, camera, renderer, pyramidModel;
+            let scene, camera, renderer, pyramidModel, sky, sun;
             let targetRotationY = 0;
             let currentRotationY = 0;
             let targetZoomZ = 8;
             let currentZoomZ = 8;
 
+            // Procedurális fű textúra generálása Canvasszal (külső kép letöltése nélkül)
+            function generateGrassTexture() {
+                const canvasTex = document.createElement("canvas");
+                canvasTex.width = 512;
+                canvasTex.height = 512;
+                const c = canvasTex.getContext("2d");
+
+                // Fű alapzöld szín
+                c.fillStyle = "#2d5a27";
+                c.fillRect(0, 0, 512, 512);
+
+                // Finom fűszál mintázat generálása
+                for (let i = 0; i < 40000; i++) {
+                    const x = Math.random() * 512;
+                    const y = Math.random() * 512;
+                    const shade = Math.random();
+                    if (shade > 0.5) {
+                        c.fillStyle = "#3a6f33"; // Világosabb zöld
+                    } else if (shade > 0.25) {
+                        c.fillStyle = "#1e3f19"; // Sötétebb zöld
+                    } else {
+                        c.fillStyle = "#48823f"; // Friss zöld fűszál
+                    }
+                    c.fillRect(x, y, 2, 4);
+                }
+
+                const texture = new THREE.CanvasTexture(canvasTex);
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(40, 40); // Textúra ismétlése a nagy síkon
+                return texture;
+            }
+
             function initThree() {
                 // 1. Jelenet
                 scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x000000);
 
                 // 2. Kamera
                 camera = new THREE.PerspectiveCamera(
@@ -547,39 +574,87 @@
                     0.1,
                     1000
                 );
-                camera.position.set(0, 1.5, 8); // Kezdeti távolság
+                camera.position.set(0, 1.5, 8);
 
-                // 3. Renderelő (GPU gyorsítással)
+                // 3. Renderelő (GPU gyorsítással és Árnyékokkal)
                 renderer = new THREE.WebGLRenderer({
                     canvas: canvas,
                     antialias: true,
-                    alpha: false,
                     powerPreference: "high-performance"
                 });
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.2;
+                renderer.toneMappingExposure = 0.8;
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-                // 4. Fények
-                const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+                // 4. Procedurális Skybox / Égbolt hozzáadása
+                sky = new THREE.Sky();
+                sky.scale.setScalar(450000);
+                scene.add(sky);
+
+                sun = new THREE.Vector3();
+                const skyUniforms = sky.material.uniforms;
+                skyUniforms['turbidity'].value = 8;
+                skyUniforms['rayleigh'].value = 1.2;
+                skyUniforms['mieCoefficient'].value = 0.005;
+                skyUniforms['mieDirectionalG'].value = 0.8;
+
+                // Nap pozíciója az égbolton (kellemes naplementéhez közeli/délutáni fény)
+                const elevation = 18; // Nap magassága fokban
+                const azimuth = 135;  // Nap iránya
+                const phi = THREE.MathUtils.degToRad(90 - elevation);
+                const theta = THREE.MathUtils.degToRad(azimuth);
+                sun.setFromSphericalCoords(1, phi, theta);
+                skyUniforms['sunPosition'].value.copy(sun);
+
+                // 5. Fények
+                const ambientLight = new THREE.AmbientLight(0xfff5ea, 1.2);
                 scene.add(ambientLight);
 
-                const mainSun = new THREE.DirectionalLight(0xfff0dd, 2.5);
-                mainSun.position.set(5, 10, 7);
+                const mainSun = new THREE.DirectionalLight(0xfff0dd, 2.8);
+                mainSun.position.copy(sun).multiplyScalar(100);
+                mainSun.castShadow = true;
+                mainSun.shadow.mapSize.width = 2048;
+                mainSun.shadow.mapSize.height = 2048;
+                mainSun.shadow.camera.near = 0.5;
+                mainSun.shadow.camera.far = 50;
+                mainSun.shadow.camera.left = -10;
+                mainSun.shadow.camera.right = 10;
+                mainSun.shadow.camera.top = 10;
+                mainSun.shadow.camera.bottom = -10;
                 scene.add(mainSun);
 
-                const fillLight = new THREE.DirectionalLight(0xd4a574, 1.0);
-                fillLight.position.set(-5, -2, -5);
-                scene.add(fillLight);
+                // 6. Fű Talaj Sík (Piramis alatt)
+                const grassTexture = generateGrassTexture();
+                const planeGeo = new THREE.PlaneGeometry(120, 120);
+                const planeMat = new THREE.MeshStandardMaterial({
+                    map: grassTexture,
+                    roughness: 0.9,
+                    metalness: 0.1
+                });
+                const ground = new THREE.Mesh(planeGeo, planeMat);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.y = -1.2; // Pontosan a piramis alja alá igazítva
+                ground.receiveShadow = true;
+                scene.add(ground);
 
-                // 5. 3D Piramis Modell Betöltése
+                // 7. 3D Piramis Modell Betöltése
                 const loader = new THREE.GLTFLoader();
 
                 loader.load(
                     "./piramis.glb",
                     (gltf) => {
                         pyramidModel = gltf.scene;
+
+                        // Árnyékok bekapcsolása a piramison
+                        pyramidModel.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        });
 
                         // Modell automatikus középre igazítása és méretezése
                         const box = new THREE.Box3().setFromObject(pyramidModel);
@@ -592,9 +667,12 @@
                         const scale = 3.5 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
+                        // Igazítás a fű szintjéhez
+                        pyramidModel.position.y = -1.2 + (size.y * scale) / 2;
+
                         scene.add(pyramidModel);
 
-                        // Betöltő képernyő elrejtése szöveg megjelenítése nélkül
+                        // Betöltő képernyő elrejtése
                         skeletonLoading.classList.add("hidden");
                     },
                     undefined,
@@ -604,30 +682,26 @@
                 );
             }
 
-            // Görgetési progresszió kiszámítása (0.0 - 1.0)
             function getScrollProgress() {
                 const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
                 const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
                 return maxScroll > 0 ? Math.max(0, Math.min(1, scrollTop / maxScroll)) : 0;
             }
 
-            // Renderelési és Animációs Ciklus (60–120 FPS)
             function animate() {
                 requestAnimationFrame(animate);
 
                 const progress = getScrollProgress();
 
-                // PONTOSAN FÉL FORDULAT (180 FOK = Math.PI) A TELJES GÖRGETÉS ALATT
+                // Fél fordulat (180 fok = Math.PI) a teljes görgetés alatt
                 targetRotationY = progress * Math.PI; 
-                targetZoomZ = 8 - progress * 5.2;
+                targetZoomZ = 8 - progress * 4.8;
 
-                // Sima Lerp átmenet a gördülékeny mozgásért
                 currentRotationY += (targetRotationY - currentRotationY) * 0.1;
                 currentZoomZ += (targetZoomZ - currentZoomZ) * 0.1;
 
                 if (pyramidModel) {
                     pyramidModel.rotation.y = currentRotationY;
-                    pyramidModel.rotation.x = Math.sin(progress * Math.PI) * 0.15;
                 }
 
                 if (camera) {
@@ -641,7 +715,6 @@
                 }
             }
 
-            // Ablak átméretezése
             window.addEventListener("resize", () => {
                 if (!camera || !renderer) return;
 
@@ -651,7 +724,6 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
             });
 
-            // Menü gomb kezelő
             function toggleMenu() {
                 const active = menuList.classList.toggle("active");
                 hamburgerBtn.setAttribute("aria-expanded", String(active));
@@ -688,7 +760,6 @@
                 }
             });
 
-            // Indítás
             window.scrollTo(0, 0);
             initThree();
             animate();
