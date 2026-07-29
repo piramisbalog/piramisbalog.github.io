@@ -525,8 +525,8 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // 📍 ELLENTÉTES IRÁNYÚ MODEL ELFORGATÁS (-0.55 rad)
-            const pyramidRotationY = -0.55; 
+            // 📍 A PIRAMIS MODEL ELFORGATÁSA 90 FOKKAL BALRA (-0.55 rad - Math.PI / 2)
+            const pyramidRotationY = -0.55 - (Math.PI / 2); 
 
             // Kamera pozíciók:
             const startCamPos = { x: 0, y: 8.5, z: 0.2 };
@@ -614,7 +614,7 @@
                         // Igazítás az origóhoz
                         pyramidModel.position.y = -0.5 + (size.y * scale) / 2;
 
-                        // Bejárati oldal elforgatása ellentétes irányba
+                        // 90 fokos balra forgatás alkalmazása a Y tengelyen
                         pyramidModel.rotation.y = pyramidRotationY;
 
                         scene.add(pyramidModel);
