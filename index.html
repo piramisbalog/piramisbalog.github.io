@@ -529,9 +529,10 @@
             let targetRotationY = 0;
             let currentRotationY = 0;
             
-            // Cseréltük az induló Z pozíciókat: a kamera közelebb kerül, hogy kompenzálja a szélesebb látószöget
-            let targetZoomZ = 4.5;
-            let currentZoomZ = 4.5;
+            // 📍 KERESD ITT (kb. 353. sor): Kamera kezdő távolsága Z tengelyen
+            // Ha növeled a FOV-ot, ezt a számot csökkentened kell, hogy a piramis ne legyen törpe.
+            let targetZoomZ = 2.8; 
+            let currentZoomZ = 2.8;
 
             // Kontakt-árnyék generálása a piramis alá
             function createShadowTexture() {
@@ -558,11 +559,12 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 camera.aspect = aspect;
 
-                // MEGOLDÁS: Magasabb FOV értékek (Field of View), hogy a háttér "kizoomolt" legyen.
+                // 📍 KERESD ITT (kb. 380-385. sor): ITT ÁLLÍTSAD A FOV ÉRTÉKEKET!
+                // Minél nagyobb a szám (pl. 90-100), annál tágasabb/kizoomoltabb a háttér!
                 if (aspect < 1) {
-                    camera.fov = 75; // 48 helyett
+                    camera.fov = 95; // Mobilon (95° ultra-széles)
                 } else {
-                    camera.fov = 60; // 36 helyett
+                    camera.fov = 90; // PC-n (90° ultraszéles)
                 }
 
                 camera.updateProjectionMatrix();
@@ -570,20 +572,17 @@
             }
 
             function initThree() {
-                // 1. Jelenet
                 scene = new THREE.Scene();
 
-                // 2. Kamera (megnövelt látószög (60) és közelebbi pozíció (4.5))
+                // 📍 Initial FOV beállítása (90°-ra állítva)
                 camera = new THREE.PerspectiveCamera(
-                    60, 
+                    90, 
                     window.innerWidth / window.innerHeight,
                     0.1,
                     2000
                 );
-                // Kamera magassága y = 1.1, távolsága z = 4.5
-                camera.position.set(0, 1.1, 4.5);
+                camera.position.set(0, 0.8, 2.8);
 
-                // 3. Renderelő beállításai
                 renderer = new THREE.WebGLRenderer({
                     canvas: canvas,
                     antialias: true,
@@ -596,9 +595,9 @@
 
                 updateCameraAspect();
 
-                // 4. 360° Panoráma Gömb (SkySphere)
+                // 360° Panoráma Gömb (SkySphere)
                 const sphereGeometry = new THREE.SphereGeometry(1000, 60, 40);
-                sphereGeometry.scale(-1, 1, 1); // Belső felület látható
+                sphereGeometry.scale(-1, 1, 1);
 
                 const textureLoader = new THREE.TextureLoader();
                 textureLoader.load('./panorama.jpg', (texture) => {
@@ -611,7 +610,7 @@
                     scene.add(skySphere);
                 });
 
-                // 5. Bevilágítás (Napfény & Könyörület)
+                // Bevilágítás
                 const ambientLight = new THREE.AmbientLight(0xfff8eb, 1.6);
                 scene.add(ambientLight);
 
@@ -623,7 +622,7 @@
                 fillLight.position.set(-6, 4, -4);
                 scene.add(fillLight);
 
-                // 6. Árnyék sík a Piramis alján
+                // Árnyék sík
                 const shadowTex = createShadowTexture();
                 const shadowGeo = new THREE.PlaneGeometry(8, 8);
                 const shadowMat = new THREE.MeshBasicMaterial({
@@ -637,7 +636,7 @@
                 shadowMesh.position.y = -0.52;
                 scene.add(shadowMesh);
 
-                // 7. 3D Piramis Modell Betöltése
+                // 3D Piramis Modell
                 const loader = new THREE.GLTFLoader();
 
                 loader.load(
@@ -655,7 +654,6 @@
                         const scale = 3.6 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        // Pozícionálás a fűszinthez
                         pyramidModel.position.y = -0.5 + (size.y * scale) / 2;
 
                         scene.add(pyramidModel);
@@ -680,16 +678,14 @@
 
                 const progress = getScrollProgress();
 
-                // Fél fordulat (180 fok = Math.PI) a görgetés hossza alatt
                 targetRotationY = progress * Math.PI;
 
-                // Távolság állítása görgetéskor (kisebb intervallumon mozog a szélesebb látószög miatt)
-                targetZoomZ = 4.5 - progress * 1.5; // 4.5-ről 3.0-ra közelít
+                // 📍 KERESD ITT (kb. 450. sor): Görgetés közbeni Z ráközelítés mértéke
+                targetZoomZ = 2.8 - progress * 1.0; 
 
                 currentRotationY += (targetRotationY - currentRotationY) * 0.1;
                 currentZoomZ += (targetZoomZ - currentZoomZ) * 0.1;
 
-                // SZINKRONIZÁLT FORGÁS: A Piramis ÉS a 360° Panoráma Gömb együtt forog!
                 if (pyramidModel) {
                     pyramidModel.rotation.y = currentRotationY;
                 }
@@ -700,9 +696,8 @@
 
                 if (camera) {
                     camera.position.z = currentZoomZ;
-                    // Mivel közelebbről nézzük, a magasság is finomabban változik
-                    camera.position.y = 1.1 - progress * 0.3;
-                    camera.lookAt(0, 0.4, 0);
+                    camera.position.y = 0.8 - progress * 0.2;
+                    camera.lookAt(0, 0.3, 0);
                 }
 
                 progressBar.style.transform = `scaleX(${progress})`;
