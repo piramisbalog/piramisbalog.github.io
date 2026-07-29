@@ -529,7 +529,7 @@
             const pyramidRotationY = -0.55 - (Math.PI / 2); 
 
             // Kamera pozíciók:
-            const startCamPos = { x: 0, y: 8.5, z: 0.2 };
+            const startCamPos = { x: 0, y: 5.8, z: 1.6 }; // Lejjebbről, lágyabb szögből induló kezdőpozíció
             const endCamPos = { x: 0, y: 1.1, z: 5.0 };
 
             // LookAt célpontok
@@ -613,6 +613,9 @@
 
                         // Igazítás az origóhoz
                         pyramidModel.position.y = -0.5 + (size.y * scale) / 2;
+
+                        // 📍 Piramis csúcsának középpontba igazítása (eltolás balra)
+                        pyramidModel.position.x = -0.75;
 
                         // 90 fokos balra forgatás alkalmazása a Y tengelyen
                         pyramidModel.rotation.y = pyramidRotationY;
