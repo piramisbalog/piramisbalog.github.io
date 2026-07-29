@@ -8,7 +8,7 @@
     <title>Piramis Balog - Műholdtól a Bejáratig | Hivatalos Oldal</title>
 
     <!-- SEO META CÍMKÉK -->
-    <meta name="description" content="Balog Piramis hivatalos interaktív weboldala. Fedezd fel az ősi Egyiptom rejtett csodáit a műholdas nézettől a bejáratig görgethető képsorozattal.">
+    <meta name="description" content="Balog Piramis hivatalos interaktív 3D weboldala. Fedezd fel az ősi Egyiptom rejtett csodáit a műholdas nézettől a bejáratig valós idejű 3D modellel.">
     <meta name="keywords" content="piramis balog, balog piramis, piramisbalog, egyiptom piramis, balogpiramis.github.io">
     <meta name="author" content="Balog Piramis">
     <meta name="robots" content="index, follow">
@@ -21,18 +21,12 @@
 
     <!-- OPEN GRAPH CÍMKÉK -->
     <meta property="og:title" content="Piramis Balog - Műholdtól a Bejáratig">
-    <meta property="og:description" content="Balog Piramis hivatalos interaktív weboldala.">
+    <meta property="og:description" content="Balog Piramis hivatalos interaktív 3D weboldala.">
     <meta property="og:url" content="https://piramisbalog.github.io/">
     <meta property="og:type" content="website">
 
-    <!-- Első képkocka előtöltése a helyes frames mappából -->
-    <link
-        rel="preload"
-        as="image"
-        href="./frames/frame_0001.webp"
-        type="image/webp"
-        fetchpriority="high"
-    >
+    <!-- 3D Modell előtöltése -->
+    <link rel="preload" href="./piramis.glb" as="fetch" crossorigin="anonymous">
 
     <style>
         * {
@@ -52,6 +46,7 @@
             overflow-x: hidden;
         }
 
+        /* Navigáció és Menü */
         .menu-container {
             position: fixed;
             top: 25px;
@@ -135,6 +130,7 @@
             color: #f4d03f;
         }
 
+        /* 3D Canvas Konténer */
         .canvas-container {
             position: fixed;
             inset: 0;
@@ -145,23 +141,23 @@
             z-index: 0;
         }
 
-        #mainCanvas {
+        #webglCanvas {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
             display: block;
-            contain: strict;
         }
 
         .overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.2);
+            background: radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%);
             z-index: 1;
             pointer-events: none;
         }
 
+        /* Görgetés-jelző */
         .scroll-indicator {
             position: fixed;
             bottom: 35px;
@@ -180,8 +176,6 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(212, 165, 116, 0.3);
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            will-change: transform, opacity;
         }
 
         @keyframes bounce {
@@ -196,6 +190,7 @@
             }
         }
 
+        /* Haladási sáv */
         .progress-container {
             position: fixed;
             bottom: 0;
@@ -216,6 +211,7 @@
             box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
         }
 
+        /* Betöltő képernyő */
         .skeleton-loading {
             position: fixed;
             inset: 0;
@@ -225,8 +221,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-            will-change: opacity;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
         }
 
         .skeleton-loading.hidden {
@@ -290,22 +285,10 @@
             animation: shimmer 1.8s infinite ease-in-out;
         }
 
-        .skeleton-text:first-child {
-            width: 60%;
-            height: 18px;
-        }
-
-        .skeleton-text:nth-child(2) {
-            width: 85%;
-        }
-
-        .skeleton-text:nth-child(3) {
-            width: 70%;
-        }
-
-        .skeleton-text:nth-child(4) {
-            width: 50%;
-        }
+        .skeleton-text:first-child { width: 60%; height: 18px; }
+        .skeleton-text:nth-child(2) { width: 85%; }
+        .skeleton-text:nth-child(3) { width: 70%; }
+        .skeleton-text:nth-child(4) { width: 50%; }
 
         .skeleton-progress {
             margin-top: 25px;
@@ -316,30 +299,29 @@
         }
 
         @keyframes shimmer {
-            0% {
-                background-position: -200% 0;
-            }
-            100% {
-                background-position: 200% 0;
-            }
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Görgethető tartalom */
+        .scroll-container {
+            position: relative;
+            z-index: 2;
         }
 
         .hero-section {
             height: 100vh;
-            position: relative;
-            z-index: 2;
             pointer-events: none;
         }
 
         .content-section {
-            min-height: 100vh;
+            min-height: 130vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 2rem;
             background: transparent;
             position: relative;
-            z-index: 2;
             pointer-events: none;
         }
 
@@ -422,27 +404,15 @@
                 bottom: 25px;
             }
         }
-
-        @media (prefers-reduced-motion: reduce) {
-            html {
-                scroll-behavior: auto;
-            }
-
-            .scroll-indicator,
-            .skeleton-canvas,
-            .skeleton-text {
-                animation: none;
-            }
-
-            .menu-list,
-            .skeleton-loading {
-                transition: none;
-            }
-        }
     </style>
+
+    <!-- Three.js és GLTFLoader 3D könyvtárak CDN-ről -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 
 <body>
+    <!-- Betöltő képernyő -->
     <div class="skeleton-loading" id="skeletonLoading">
         <div class="skeleton-canvas"></div>
 
@@ -454,10 +424,11 @@
         </div>
 
         <div class="skeleton-progress" id="skeletonProgress">
-            Első kép betöltése...
+            3D Modell betöltése...
         </div>
     </div>
 
+    <!-- Navigáció -->
     <nav class="menu-container" aria-label="Főmenü">
         <div
             class="hamburger-icon"
@@ -480,74 +451,80 @@
         </div>
     </nav>
 
+    <!-- Haladási sáv -->
     <div class="progress-container" aria-hidden="true">
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
+    <!-- Állandóan látható felirat -->
     <div class="scroll-indicator" id="scrollIndicator">
-        ↓ Görgess lefelé ↓
+        ↓ Görgess lejjebb ↓
     </div>
 
+    <!-- 3D Canvas -->
     <div class="canvas-container">
-        <canvas id="mainCanvas"></canvas>
+        <canvas id="webglCanvas"></canvas>
         <div class="overlay"></div>
     </div>
 
-    <div class="hero-section"></div>
+    <!-- Görgethető szekciók -->
+    <div class="scroll-container">
+        <div class="hero-section"></div>
 
-    <section class="content-section" id="bemutatkozas">
-        <div class="info-card">
-            <h1>Piramis Balog</h1>
-            <p>
-                A kamera távolról közelít, felfedi a piramis monumentális
-                méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi
-                Egyiptom rejtett csodáit a Balog Piramis hivatalos oldalán.
-            </p>
-        </div>
-    </section>
+        <section class="content-section" id="bemutatkozas">
+            <div class="info-card">
+                <h1>Piramis Balog</h1>
+                <p>
+                    A kamera távolról közelít, felfedi a piramis monumentális
+                    méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi
+                    Egyiptom rejtett csodáit a Balog Piramis hivatalos oldalán.
+                </p>
+            </div>
+        </section>
 
-    <section class="content-section" id="multunk">
-        <div class="info-card">
-            <h2>Múltunk</h2>
-            <p>
-                Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit.
-                Spirálozva ereszkedés közben minden oldalról bemutatjuk az
-                építményt, feltárva szimmetriáját.
-            </p>
-        </div>
-    </section>
+        <section class="content-section" id="multunk">
+            <div class="info-card">
+                <h2>Múltunk</h2>
+                <p>
+                    Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit.
+                    Spirálozva ereszkedés közben minden oldalról bemutatjuk az
+                    építményt, feltárva szimmetriáját.
+                </p>
+            </div>
+        </section>
 
-    <section class="content-section" id="elerhetoseg">
-        <div class="info-card">
-            <h2>📬 Elérhetőség</h2>
+        <section class="content-section" id="elerhetoseg">
+            <div class="info-card">
+                <h2>📬 Elérhetőség</h2>
 
-            <p>
-                📧 balogpiramis@gmail.com<br>
-                📱 Függőben<br>
-                📍
-                <a
-                    href="https://maps.app.goo.gl/qzjUGYWwJE71uWdN6?g_st=ic"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Térkép megnyitása
-                </a>
-            </p>
+                <p>
+                    📧 balogpiramis@gmail.com<br>
+                    📱 Függőben<br>
+                    📍
+                    <a
+                        href="https://maps.app.goo.gl/qzjUGYWwJE71uWdN6?g_st=ic"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Térkép megnyitása
+                    </a>
+                </p>
 
-            <iframe
-                class="map-frame"
-                src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed"
-                title="Balogpiramis helye a térképen"
-                loading="lazy"
-                allowfullscreen
-                referrerpolicy="no-referrer-when-downgrade"
-            ></iframe>
+                <iframe
+                    class="map-frame"
+                    src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed"
+                    title="Balogpiramis helye a térképen"
+                    loading="lazy"
+                    allowfullscreen
+                    referrerpolicy="no-referrer-when-downgrade"
+                ></iframe>
 
-            <p>
-                Kövess minket, és légy részese az ősi titkok feltárásának!
-            </p>
-        </div>
-    </section>
+                <p>
+                    Kövess minket, és légy részese az ősi titkok feltárásának!
+                </p>
+            </div>
+        </section>
+    </div>
 
     <script>
         (() => {
@@ -557,416 +534,149 @@
                 history.scrollRestoration = "manual";
             }
 
-            const canvas = document.getElementById("mainCanvas");
-            const ctx = canvas.getContext("2d", {
-                alpha: false,
-                desynchronized: true
-            });
-
+            const canvas = document.getElementById("webglCanvas");
             const progressBar = document.getElementById("progressBar");
             const skeletonLoading = document.getElementById("skeletonLoading");
             const skeletonProgress = document.getElementById("skeletonProgress");
-            const scrollIndicator = document.getElementById("scrollIndicator");
             const hamburgerBtn = document.getElementById("hamburgerBtn");
             const menuList = document.getElementById("menuList");
 
-            const FRAME_COUNT = 294;
-            // JAVÍTVA: A GitHubon 'frames' nevű mappa található kisbetűvel
-            const FRAME_PATH = "./frames/frame_";
-            const FRAME_EXTENSION = ".webp";
+            // Three.js Alapváltozók
+            let scene, camera, renderer, pyramidModel;
+            let targetRotationY = 0;
+            let currentRotationY = 0;
+            let targetZoomZ = 8;
+            let currentZoomZ = 8;
 
-            const isMobile = window.matchMedia("(max-width: 768px)").matches;
+            function initThree() {
+                // 1. Jelenet
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x000000);
 
-            const FRAME_STEP = isMobile ? 3 : 1;
-            const MAX_CACHED_FRAMES = isMobile ? 24 : 48;
-
-            const images = new Map();
-            const loadingFrames = new Map();
-            const failedFrames = new Set();
-            const frameUsage = new Map();
-
-            let currentFrame = -1;
-            let requestedFrame = 0;
-            let rafPending = false;
-            let resizeTimer = null;
-            let firstFrameRendered = false;
-            let usageCounter = 0;
-
-            const getPixelRatio = () =>
-                Math.min(window.devicePixelRatio || 1, 1.5);
-
-            function getFrameUrl(frameIndex) {
-                const frameNumber = String(frameIndex + 1).padStart(4, "0");
-                return `${FRAME_PATH}${frameNumber}${FRAME_EXTENSION}`;
-            }
-
-            function normalizeFrameIndex(frameIndex) {
-                const limited = Math.max(
-                    0,
-                    Math.min(FRAME_COUNT - 1, Math.round(frameIndex))
+                // 2. Kamera
+                camera = new THREE.PerspectiveCamera(
+                    45,
+                    window.innerWidth / window.innerHeight,
+                    0.1,
+                    1000
                 );
+                camera.position.set(0, 1.5, 8); // Kezdeti távolság
 
-                if (FRAME_STEP === 1) {
-                    return limited;
-                }
-
-                return Math.min(
-                    FRAME_COUNT - 1,
-                    Math.round(limited / FRAME_STEP) * FRAME_STEP
-                );
-            }
-
-            function markFrameUsed(frameIndex) {
-                frameUsage.set(frameIndex, ++usageCounter);
-            }
-
-            function trimFrameCache(protectedFrames = []) {
-                if (images.size <= MAX_CACHED_FRAMES) {
-                    return;
-                }
-
-                const protectedSet = new Set(
-                    protectedFrames.map(normalizeFrameIndex)
-                );
-
-                const removable = [...images.keys()]
-                    .filter((frameIndex) => !protectedSet.has(frameIndex))
-                    .sort(
-                        (a, b) =>
-                            (frameUsage.get(a) || 0) -
-                            (frameUsage.get(b) || 0)
-                    );
-
-                while (
-                    images.size > MAX_CACHED_FRAMES &&
-                    removable.length > 0
-                ) {
-                    const frameIndex = removable.shift();
-                    images.delete(frameIndex);
-                    frameUsage.delete(frameIndex);
-                }
-            }
-
-            function resizeCanvas() {
-                const dpr = getPixelRatio();
-                const width = window.innerWidth;
-                const height = window.innerHeight;
-
-                canvas.width = Math.round(width * dpr);
-                canvas.height = Math.round(height * dpr);
-                canvas.style.width = `${width}px`;
-                canvas.style.height = `${height}px`;
-
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-                if (currentFrame >= 0) {
-                    drawBestAvailableFrame(currentFrame);
-                }
-            }
-
-            function hideSkeleton() {
-                if (firstFrameRendered) {
-                    return;
-                }
-
-                firstFrameRendered = true;
-                skeletonProgress.textContent = "Kész";
-                skeletonLoading.classList.add("hidden");
-            }
-
-            function loadFrame(frameIndex, priority = "auto") {
-                const normalized = normalizeFrameIndex(frameIndex);
-
-                if (images.has(normalized)) {
-                    markFrameUsed(normalized);
-                    return Promise.resolve(images.get(normalized));
-                }
-
-                if (loadingFrames.has(normalized)) {
-                    return loadingFrames.get(normalized);
-                }
-
-                if (failedFrames.has(normalized)) {
-                    return Promise.resolve(null);
-                }
-
-                const promise = new Promise((resolve) => {
-                    const image = new Image();
-
-                    image.decoding = "async";
-
-                    if ("fetchPriority" in image) {
-                        image.fetchPriority = priority;
-                    }
-
-                    image.onload = async () => {
-                        try {
-                            if (typeof image.decode === "function") {
-                                await image.decode();
-                            }
-                        } catch {}
-
-                        loadingFrames.delete(normalized);
-                        images.set(normalized, image);
-                        markFrameUsed(normalized);
-
-                        trimFrameCache([
-                            normalized,
-                            requestedFrame,
-                            currentFrame
-                        ]);
-
-                        resolve(image);
-                    };
-
-                    image.onerror = () => {
-                        loadingFrames.delete(normalized);
-                        failedFrames.add(normalized);
-
-                        console.warn(`Hiányzó képkocka: ${image.src}`);
-                        resolve(null);
-                    };
-
-                    image.src = getFrameUrl(normalized);
+                // 3. Renderelő (GPU gyorsítással)
+                renderer = new THREE.WebGLRenderer({
+                    canvas: canvas,
+                    antialias: true,
+                    alpha: false,
+                    powerPreference: "high-performance"
                 });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                renderer.toneMappingExposure = 1.2;
 
-                loadingFrames.set(normalized, promise);
-                return promise;
+                // 4. Fények (Arany/Meleg árnyalatú piramis világítás)
+                const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+                scene.add(ambientLight);
+
+                const mainSun = new THREE.DirectionalLight(0xfff0dd, 2.5);
+                mainSun.position.set(5, 10, 7);
+                scene.add(mainSun);
+
+                const fillLight = new THREE.DirectionalLight(0xd4a574, 1.0);
+                fillLight.position.set(-5, -2, -5);
+                scene.add(fillLight);
+
+                // 5. 3D Piramis Modell Betöltése
+                const loader = new THREE.GLTFLoader();
+
+                loader.load(
+                    "./piramis.glb",
+                    (gltf) => {
+                        pyramidModel = gltf.scene;
+
+                        // Modell automatikus középre igazítása és méretezése
+                        const box = new THREE.Box3().setFromObject(pyramidModel);
+                        const center = box.getCenter(new THREE.Vector3());
+                        const size = box.getSize(new THREE.Vector3());
+
+                        pyramidModel.position.sub(center); // Középpontba mozgatás
+
+                        // Méretezés, hogy szépen elférjen a kijelzőn
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const scale = 3.5 / maxDim;
+                        pyramidModel.scale.set(scale, scale, scale);
+
+                        scene.add(pyramidModel);
+
+                        // Betöltő képernyő elrejtése
+                        skeletonProgress.textContent = "Kész";
+                        skeletonLoading.classList.add("hidden");
+                    },
+                    (xhr) => {
+                        if (xhr.lengthComputable) {
+                            const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                            skeletonProgress.textContent = `3D Modell betöltése... (${percent}%)`;
+                        }
+                    },
+                    (error) => {
+                        console.error("Hiba a 3D modell betöltésekor:", error);
+                        skeletonProgress.innerHTML = "<span style='color: #ff6b6b;'>Hiba: A piramis.glb fájl nem található!</span>";
+                    }
+                );
             }
 
-            function findNearestLoadedFrame(targetFrame) {
-                const target = normalizeFrameIndex(targetFrame);
-
-                if (images.has(target)) {
-                    return target;
-                }
-
-                for (
-                    let distance = FRAME_STEP;
-                    distance < FRAME_COUNT;
-                    distance += FRAME_STEP
-                ) {
-                    const previous = target - distance;
-                    const next = target + distance;
-
-                    if (previous >= 0 && images.has(previous)) {
-                        return previous;
-                    }
-
-                    if (next < FRAME_COUNT && images.has(next)) {
-                        return next;
-                    }
-                }
-
-                return null;
-            }
-
-            function drawBestAvailableFrame(targetFrame) {
-                const nearestFrame = findNearestLoadedFrame(targetFrame);
-
-                if (nearestFrame !== null) {
-                    drawFrame(nearestFrame);
-                }
-            }
-
-            function drawFrame(frameIndex) {
-                const image = images.get(frameIndex);
-
-                if (
-                    !image ||
-                    !image.complete ||
-                    image.naturalWidth === 0 ||
-                    image.naturalHeight === 0
-                ) {
-                    return;
-                }
-
-                const width = window.innerWidth;
-                const height = window.innerHeight;
-                const canvasRatio = width / height;
-                const imageRatio =
-                    image.naturalWidth / image.naturalHeight;
-
-                ctx.fillStyle = "#000";
-                ctx.fillRect(0, 0, width, height);
-
-                let coverWidth;
-                let coverHeight;
-                let coverX;
-                let coverY;
-
-                if (imageRatio > canvasRatio) {
-                    coverHeight = height;
-                    coverWidth = coverHeight * imageRatio;
-                    coverX = (width - coverWidth) / 2;
-                    coverY = 0;
-                } else {
-                    coverWidth = width;
-                    coverHeight = coverWidth / imageRatio;
-                    coverX = 0;
-                    coverY = (height - coverHeight) / 2;
-                }
-
-                if (isMobile) {
-                    ctx.drawImage(
-                        image,
-                        coverX,
-                        coverY,
-                        coverWidth,
-                        coverHeight
-                    );
-                } else {
-                    ctx.save();
-                    ctx.filter = "blur(12px) brightness(0.45)";
-                    ctx.drawImage(
-                        image,
-                        coverX,
-                        coverY,
-                        coverWidth,
-                        coverHeight
-                    );
-                    ctx.restore();
-
-                    let drawWidth;
-                    let drawHeight;
-                    let offsetX;
-                    let offsetY;
-
-                    if (imageRatio > canvasRatio) {
-                        drawWidth = width;
-                        drawHeight = drawWidth / imageRatio;
-                        offsetX = 0;
-                        offsetY = (height - drawHeight) / 2;
-                    } else {
-                        drawHeight = height;
-                        drawWidth = drawHeight * imageRatio;
-                        offsetX = (width - drawWidth) / 2;
-                        offsetY = 0;
-                    }
-
-                    ctx.drawImage(
-                        image,
-                        offsetX,
-                        offsetY,
-                        drawWidth,
-                        drawHeight
-                    );
-                }
-
-                currentFrame = frameIndex;
-                markFrameUsed(frameIndex);
-                hideSkeleton();
-            }
-
-            function preloadAroundFrame(centerFrame) {
-                const center = normalizeFrameIndex(centerFrame);
-                const radius = isMobile ? 6 : 8;
-
-                loadFrame(center, "high");
-
-                for (
-                    let distance = FRAME_STEP;
-                    distance <= radius;
-                    distance += FRAME_STEP
-                ) {
-                    const previous = center - distance;
-                    const next = center + distance;
-
-                    if (next < FRAME_COUNT) {
-                        loadFrame(next, "auto");
-                    }
-
-                    if (previous >= 0) {
-                        loadFrame(previous, "auto");
-                    }
-                }
-
-                trimFrameCache([
-                    center,
-                    currentFrame,
-                    center - FRAME_STEP,
-                    center + FRAME_STEP
-                ]);
-            }
-
+            // Görgetési progresszió kiszámítása (0.0 - 1.0)
             function getScrollProgress() {
-                const scrollTop =
-                    window.scrollY ||
-                    document.documentElement.scrollTop ||
-                    0;
-
-                const maxScroll =
-                    document.documentElement.scrollHeight -
-                    window.innerHeight;
-
-                return maxScroll > 0
-                    ? Math.max(0, Math.min(1, scrollTop / maxScroll))
-                    : 0;
+                const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                return maxScroll > 0 ? Math.max(0, Math.min(1, scrollTop / maxScroll)) : 0;
             }
 
-            async function ensureRequestedFrame() {
-                const frame = requestedFrame;
-
-                if (images.has(frame)) {
-                    drawFrame(frame);
-                    return;
-                }
-
-                drawBestAvailableFrame(frame);
-
-                const image = await loadFrame(frame, "high");
-
-                if (image && requestedFrame === frame) {
-                    drawFrame(frame);
-                }
-            }
-
-            function updateFromScroll() {
-                rafPending = false;
-
-                const scrollTop =
-                    window.scrollY ||
-                    document.documentElement.scrollTop ||
-                    0;
+            // Renderelési és Animációs Ciklus (60–120 FPS)
+            function animate() {
+                requestAnimationFrame(animate);
 
                 const progress = getScrollProgress();
 
-                requestedFrame = normalizeFrameIndex(
-                    progress * (FRAME_COUNT - 1)
-                );
+                // Cél forgás és közeledés meghatározása a görgetés alapján
+                targetRotationY = progress * Math.PI * 4; // 2 teljes fordulat (720 fok)
+                targetZoomZ = 8 - progress * 5.2; // 8-as távolságról közeledik 2.8-ra
+
+                // Sima Lerp átmenet a gördülékeny mozgásért
+                currentRotationY += (targetRotationY - currentRotationY) * 0.1;
+                currentZoomZ += (targetZoomZ - currentZoomZ) * 0.1;
+
+                if (pyramidModel) {
+                    pyramidModel.rotation.y = currentRotationY;
+                    // Enyhe függőleges billentés görgetés közben
+                    pyramidModel.rotation.x = Math.sin(progress * Math.PI) * 0.2;
+                }
+
+                if (camera) {
+                    camera.position.z = currentZoomZ;
+                }
 
                 progressBar.style.transform = `scaleX(${progress})`;
 
-                if (scrollIndicator) {
-                    const opacity = Math.max(0, 1 - scrollTop / 150);
-
-                    scrollIndicator.style.opacity = String(opacity);
-                    scrollIndicator.style.visibility =
-                        opacity > 0.01 ? "visible" : "hidden";
-                }
-
-                if (requestedFrame !== currentFrame) {
-                    ensureRequestedFrame();
-                    preloadAroundFrame(requestedFrame);
+                if (renderer && scene && camera) {
+                    renderer.render(scene, camera);
                 }
             }
 
-            function requestScrollUpdate() {
-                if (rafPending) {
-                    return;
-                }
+            // Ablak átméretezése
+            window.addEventListener("resize", () => {
+                if (!camera || !renderer) return;
 
-                rafPending = true;
-                requestAnimationFrame(updateFromScroll);
-            }
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
 
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // Menü gomb kezelő
             function toggleMenu() {
                 const active = menuList.classList.toggle("active");
-
-                hamburgerBtn.setAttribute(
-                    "aria-expanded",
-                    String(active)
-                );
+                hamburgerBtn.setAttribute("aria-expanded", String(active));
             }
 
             hamburgerBtn.addEventListener("click", (event) => {
@@ -981,94 +691,29 @@
                 }
             });
 
-            document
-                .querySelectorAll(".menu-list a")
-                .forEach((link) => {
-                    link.addEventListener("click", (event) => {
-                        event.preventDefault();
+            document.querySelectorAll(".menu-list a").forEach((link) => {
+                link.addEventListener("click", (event) => {
+                    event.preventDefault();
 
-                        const target = document.querySelector(
-                            link.getAttribute("href")
-                        );
+                    const target = document.querySelector(link.getAttribute("href"));
+                    target?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-                        target?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start"
-                        });
-
-                        menuList.classList.remove("active");
-                        hamburgerBtn.setAttribute(
-                            "aria-expanded",
-                            "false"
-                        );
-                    });
+                    menuList.classList.remove("active");
+                    hamburgerBtn.setAttribute("aria-expanded", "false");
                 });
+            });
 
             document.addEventListener("click", (event) => {
-                if (
-                    !hamburgerBtn.contains(event.target) &&
-                    !menuList.contains(event.target)
-                ) {
+                if (!hamburgerBtn.contains(event.target) && !menuList.contains(event.target)) {
                     menuList.classList.remove("active");
-                    hamburgerBtn.setAttribute(
-                        "aria-expanded",
-                        "false"
-                    );
+                    hamburgerBtn.setAttribute("aria-expanded", "false");
                 }
             });
 
-            window.addEventListener(
-                "scroll",
-                requestScrollUpdate,
-                { passive: true }
-            );
-
-            window.addEventListener("resize", () => {
-                clearTimeout(resizeTimer);
-
-                resizeTimer = setTimeout(() => {
-                    resizeCanvas();
-                    requestScrollUpdate();
-                }, 120);
-            });
-
-            document.addEventListener("visibilitychange", () => {
-                if (!document.hidden) {
-                    requestScrollUpdate();
-                }
-            });
-
-            async function initialize() {
-                window.scrollTo(0, 0);
-                resizeCanvas();
-
-                skeletonProgress.textContent =
-                    "Első kép betöltése...";
-
-                const firstImage = await loadFrame(0, "high");
-
-                if (firstImage) {
-                    drawFrame(0);
-                } else {
-                    const fallbackFrame = normalizeFrameIndex(FRAME_STEP);
-                    const fallbackImage = await loadFrame(
-                        fallbackFrame,
-                        "high"
-                    );
-
-                    if (fallbackImage) {
-                        drawFrame(fallbackFrame);
-                    } else {
-                        skeletonProgress.textContent =
-                            "A képek nem tölthetők be.";
-                    }
-                }
-
-                preloadAroundFrame(0);
-                requestScrollUpdate();
-            }
-
-            initialize();
+            // Indítás
+            window.scrollTo(0, 0);
+            initThree();
+            animate();
         })();
     </script>
 </body>
