@@ -15,7 +15,6 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: #000;
             color: white;
-            /* A magasságot JS-ben állítjuk be */
         }
 
         /* ========== HAMBURGER MENÜ ========== */
@@ -443,23 +442,14 @@
         const skeletonLoading = document.getElementById('skeletonLoading');
         const skeletonProgress = document.getElementById('skeletonProgress');
 
-        // 🆕 294 képkocka
         const frameCount = 294;
         const images = [];
         let imagesLoaded = 0;
         let currentFrame = -1;
         let allLoaded = false;
 
-        // Kép mappa kiválasztása eszköz alapján
-        function getFrameFolder() {
-            const isMobile = window.innerWidth <= 768;
-            return isMobile ? 'Frames' : 'Frames1';
-        }
-
-        function getFramePath() {
-            const folder = getFrameFolder();
-            return `https://ronika123.github.io/${folder}/frame_`;
-        }
+        // 🆕 Csak a Frames1 mappa használata minden eszközön
+        const framePath = 'https://ronika123.github.io/Frames1/frame_';
 
         // Body magasság: 400vh
         function setBodyHeight() {
@@ -482,10 +472,8 @@
             }
         });
 
-        // Képek betöltése a megfelelő mappából
         function loadImages() {
-            const framePath = getFramePath();
-            console.log('📁 Képek betöltése ebből a mappából: ' + getFrameFolder());
+            console.log('📁 Képek betöltése a Frames1 mappából');
             
             for (let i = 0; i < frameCount; i++) {
                 const img = new Image();
@@ -502,7 +490,7 @@
                         allLoaded = true;
                         skeletonLoading.classList.add('hidden');
                         drawFrame(0);
-                        console.log('✅ Mind a(z) ' + frameCount + ' kép betöltve a(z) ' + getFrameFolder() + ' mappából!');
+                        console.log('✅ Mind a(z) ' + frameCount + ' kép betöltve!');
                     }
                 };
                 
@@ -534,42 +522,69 @@
             const canvasRatio = canvas.width / canvas.height;
             const imgRatio = img.width / img.height;
             
-            // Háttér: homályosított, nagyított (Cover)
-            let bgWidth, bgHeight, bgX, bgY;
+            // 🆕 MOBILON: Cover (croppolás), ASZTALIN: Contain + blur háttér
+            const isMobile = window.innerWidth <= 768;
             
-            if (imgRatio > canvasRatio) {
-                bgHeight = canvas.height;
-                bgWidth = bgHeight * imgRatio;
-                bgX = (canvas.width - bgWidth) / 2;
-                bgY = 0;
+            if (isMobile) {
+                // MOBIL: Cover mód - kitölti a teljes képernyőt, levágja a széleket
+                let drawWidth, drawHeight, offsetX, offsetY;
+                
+                if (imgRatio > canvasRatio) {
+                    // Kép szélesebb - magasság alapján méretezünk, szélességből levágunk
+                    drawHeight = canvas.height;
+                    drawWidth = drawHeight * imgRatio;
+                    offsetX = (canvas.width - drawWidth) / 2;
+                    offsetY = 0;
+                } else {
+                    // Kép magasabb - szélesség alapján méretezünk, magasságból levágunk
+                    drawWidth = canvas.width;
+                    drawHeight = drawWidth / imgRatio;
+                    offsetX = 0;
+                    offsetY = (canvas.height - drawHeight) / 2;
+                }
+                
+                ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+                
             } else {
-                bgWidth = canvas.width;
-                bgHeight = bgWidth / imgRatio;
-                bgX = 0;
-                bgY = (canvas.height - bgHeight) / 2;
+                // ASZTALI: Eredeti kettős rajzolás (blur háttér + éles contain)
+                
+                // Háttér: homályosított, nagyított (Cover)
+                let bgWidth, bgHeight, bgX, bgY;
+                
+                if (imgRatio > canvasRatio) {
+                    bgHeight = canvas.height;
+                    bgWidth = bgHeight * imgRatio;
+                    bgX = (canvas.width - bgWidth) / 2;
+                    bgY = 0;
+                } else {
+                    bgWidth = canvas.width;
+                    bgHeight = bgWidth / imgRatio;
+                    bgX = 0;
+                    bgY = (canvas.height - bgHeight) / 2;
+                }
+                
+                ctx.filter = 'blur(40px) brightness(0.5)';
+                ctx.drawImage(img, bgX, bgY, bgWidth, bgHeight);
+                
+                // Előtér: éles, méretarányos (Contain)
+                ctx.filter = 'none'; 
+                
+                let fgWidth, fgHeight, fgX, fgY;
+                
+                if (imgRatio < canvasRatio) {
+                    fgHeight = canvas.height;
+                    fgWidth = fgHeight * imgRatio;
+                    fgX = (canvas.width - fgWidth) / 2;
+                    fgY = 0;
+                } else {
+                    fgWidth = canvas.width;
+                    fgHeight = fgWidth / imgRatio;
+                    fgX = 0;
+                    fgY = (canvas.height - fgHeight) / 2;
+                }
+                
+                ctx.drawImage(img, fgX, fgY, fgWidth, fgHeight);
             }
-            
-            ctx.filter = 'blur(40px) brightness(0.5)';
-            ctx.drawImage(img, bgX, bgY, bgWidth, bgHeight);
-            
-            // Előtér: éles, méretarányos (Contain)
-            ctx.filter = 'none'; 
-            
-            let fgWidth, fgHeight, fgX, fgY;
-            
-            if (imgRatio < canvasRatio) {
-                fgHeight = canvas.height;
-                fgWidth = fgHeight * imgRatio;
-                fgX = (canvas.width - fgWidth) / 2;
-                fgY = 0;
-            } else {
-                fgWidth = canvas.width;
-                fgHeight = fgWidth / imgRatio;
-                fgX = 0;
-                fgY = (canvas.height - fgHeight) / 2;
-            }
-            
-            ctx.drawImage(img, fgX, fgY, fgWidth, fgHeight);
         }
 
         function updateFrame() {
