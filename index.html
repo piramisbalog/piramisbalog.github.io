@@ -529,10 +529,9 @@
             let targetRotationY = 0;
             let currentRotationY = 0;
             
-            // 📍 KERESD ITT (kb. 353. sor): Kamera kezdő távolsága Z tengelyen
-            // Ha növeled a FOV-ot, ezt a számot csökkentened kell, hogy a piramis ne legyen törpe.
-            let targetZoomZ = 2.8; 
-            let currentZoomZ = 2.8;
+            // A kamera távolsága Z tengelyen megnövelve 6.5-re (a piramis messzebb kerül)
+            let targetZoomZ = 6.5; 
+            let currentZoomZ = 6.5;
 
             // Kontakt-árnyék generálása a piramis alá
             function createShadowTexture() {
@@ -559,12 +558,11 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 camera.aspect = aspect;
 
-                // 📍 KERESD ITT (kb. 380-385. sor): ITT ÁLLÍTSAD A FOV ÉRTÉKEKET!
-                // Minél nagyobb a szám (pl. 90-100), annál tágasabb/kizoomoltabb a háttér!
+                // ULTRA-SZÉLES látószög (FOV): 105° PC-n és 110° mobilon
                 if (aspect < 1) {
-                    camera.fov = 95; // Mobilon (95° ultra-széles)
+                    camera.fov = 110; 
                 } else {
-                    camera.fov = 90; // PC-n (90° ultraszéles)
+                    camera.fov = 105; 
                 }
 
                 camera.updateProjectionMatrix();
@@ -574,14 +572,15 @@
             function initThree() {
                 scene = new THREE.Scene();
 
-                // 📍 Initial FOV beállítása (90°-ra állítva)
+                // Kamera inicializálása 105°-os ultraszéles FOV-val
                 camera = new THREE.PerspectiveCamera(
-                    90, 
+                    105, 
                     window.innerWidth / window.innerHeight,
                     0.1,
                     2000
                 );
-                camera.position.set(0, 0.8, 2.8);
+                // Kezdőpozíció: magasság y = 1.8, távolság z = 6.5 (messzebb lévő piramis)
+                camera.position.set(0, 1.8, 6.5);
 
                 renderer = new THREE.WebGLRenderer({
                     canvas: canvas,
@@ -680,8 +679,8 @@
 
                 targetRotationY = progress * Math.PI;
 
-                // 📍 KERESD ITT (kb. 450. sor): Görgetés közbeni Z ráközelítés mértéke
-                targetZoomZ = 2.8 - progress * 1.0; 
+                // Távolabbról indul (6.5), és görgetéskor lassan közelít (4.0-ig)
+                targetZoomZ = 6.5 - progress * 2.5; 
 
                 currentRotationY += (targetRotationY - currentRotationY) * 0.1;
                 currentZoomZ += (targetZoomZ - currentZoomZ) * 0.1;
@@ -696,8 +695,8 @@
 
                 if (camera) {
                     camera.position.z = currentZoomZ;
-                    camera.position.y = 0.8 - progress * 0.2;
-                    camera.lookAt(0, 0.3, 0);
+                    camera.position.y = 1.8 - progress * 0.5;
+                    camera.lookAt(0, 0.4, 0);
                 }
 
                 progressBar.style.transform = `scaleX(${progress})`;
