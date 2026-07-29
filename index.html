@@ -4,16 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Első képkocka előtöltése a gyors megjelenítésért -->
+    <!-- CÍMSOR: A "Piramis Balog" kulcsszavak kiemelve a Google kereső számára -->
+    <title>Piramis Balog - Műholdtól a Bejáratig | Hivatalos Oldal</title>
+
+    <!-- SEO META CÍMKÉK -->
+    <meta name="description" content="Balog Piramis hivatalos interaktív weboldala. Fedezd fel az ősi Egyiptom rejtett csodáit a műholdas nézettől a bejáratig görgethető képsorozattal.">
+    <meta name="keywords" content="piramis balog, balog piramis, piramisbalog, egyiptom piramis, balogpiramis.github.io">
+    <meta name="author" content="Balog Piramis">
+    <meta name="robots" content="index, follow">
+
+    <!-- KANONIKUS LINK -->
+    <link rel="canonical" href="https://piramisbalog.github.io/">
+
+    <!-- GOOGLE SITE VERIFICATION META BACKUP -->
+    <meta name="google-site-verification" content="google57f4eed80b0aa14b">
+
+    <!-- OPEN GRAPH CÍMKÉK (Közösségi média és kereső előnézet) -->
+    <meta property="og:title" content="Piramis Balog - Műholdtól a Bejáratig">
+    <meta property="og:description" content="Balog Piramis hivatalos interaktív weboldala.">
+    <meta property="og:url" content="https://piramisbalog.github.io/">
+    <meta property="og:type" content="website">
+
+    <!-- Első képkocka előtöltése a gyors indításhoz -->
     <link
         rel="preload"
         as="image"
-        href="./frames/frame_0001.webp"
+        href="./Frames1/frame_0001.webp"
         type="image/webp"
         fetchpriority="high"
     >
-
-    <title>Piramis - Műholdtól a Bejáratig</title>
 
     <style>
         * {
@@ -33,7 +52,6 @@
             overflow-x: hidden;
         }
 
-        /* Navigáció és Menü */
         .menu-container {
             position: fixed;
             top: 25px;
@@ -84,7 +102,10 @@
             transform: translateY(-10px);
             opacity: 0;
             visibility: hidden;
-            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+            transition:
+                transform 0.3s ease,
+                opacity 0.3s ease,
+                visibility 0.3s ease;
             will-change: transform, opacity;
         }
 
@@ -102,7 +123,10 @@
             font-size: 16px;
             letter-spacing: 0.5px;
             white-space: nowrap;
-            transition: background 0.2s ease, padding-left 0.2s ease, color 0.2s ease;
+            transition:
+                background 0.2s ease,
+                padding-left 0.2s ease,
+                color 0.2s ease;
         }
 
         .menu-list a:hover {
@@ -111,7 +135,6 @@
             color: #f4d03f;
         }
 
-        /* Vászon (Canvas) */
         .canvas-container {
             position: fixed;
             inset: 0;
@@ -139,7 +162,6 @@
             pointer-events: none;
         }
 
-        /* Állandóan látható felirat a kijelző alján */
         .scroll-indicator {
             position: fixed;
             bottom: 35px;
@@ -149,7 +171,6 @@
             color: white;
             font-size: 0.9rem;
             opacity: 1;
-            visibility: visible;
             animation: bounce 2s infinite;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
             pointer-events: none;
@@ -159,6 +180,8 @@
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(212, 165, 116, 0.3);
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            will-change: transform, opacity;
         }
 
         @keyframes bounce {
@@ -173,7 +196,6 @@
             }
         }
 
-        /* Haladási sáv */
         .progress-container {
             position: fixed;
             bottom: 0;
@@ -194,7 +216,6 @@
             box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
         }
 
-        /* Betöltő képernyő */
         .skeleton-loading {
             position: fixed;
             inset: 0;
@@ -269,10 +290,22 @@
             animation: shimmer 1.8s infinite ease-in-out;
         }
 
-        .skeleton-text:first-child { width: 60%; height: 18px; }
-        .skeleton-text:nth-child(2) { width: 85%; }
-        .skeleton-text:nth-child(3) { width: 70%; }
-        .skeleton-text:nth-child(4) { width: 50%; }
+        .skeleton-text:first-child {
+            width: 60%;
+            height: 18px;
+        }
+
+        .skeleton-text:nth-child(2) {
+            width: 85%;
+        }
+
+        .skeleton-text:nth-child(3) {
+            width: 70%;
+        }
+
+        .skeleton-text:nth-child(4) {
+            width: 50%;
+        }
 
         .skeleton-progress {
             margin-top: 25px;
@@ -283,28 +316,30 @@
         }
 
         @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-
-        .scroll-container {
-            position: relative;
-            z-index: 2;
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
         }
 
         .hero-section {
             height: 100vh;
+            position: relative;
+            z-index: 2;
             pointer-events: none;
         }
 
         .content-section {
-            min-height: 120vh;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 2rem;
             background: transparent;
             position: relative;
+            z-index: 2;
             pointer-events: none;
         }
 
@@ -324,7 +359,7 @@
             pointer-events: auto;
         }
 
-        .info-card h2 {
+        .info-card h1, .info-card h2 {
             font-size: 2rem;
             color: #d4a574;
             margin-bottom: 1rem;
@@ -408,7 +443,6 @@
 </head>
 
 <body>
-    <!-- Betöltő képernyő -->
     <div class="skeleton-loading" id="skeletonLoading">
         <div class="skeleton-canvas"></div>
 
@@ -420,11 +454,10 @@
         </div>
 
         <div class="skeleton-progress" id="skeletonProgress">
-            Képek betöltése...
+            Első kép betöltése...
         </div>
     </div>
 
-    <!-- Navigáció -->
     <nav class="menu-container" aria-label="Főmenü">
         <div
             class="hamburger-icon"
@@ -447,80 +480,74 @@
         </div>
     </nav>
 
-    <!-- Haladási sáv -->
     <div class="progress-container" aria-hidden="true">
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
-    <!-- Állandóan látható felirat -->
     <div class="scroll-indicator" id="scrollIndicator">
-        ↓ Görgess lejjebb ↓
+        ↓ Görgess lefelé ↓
     </div>
 
-    <!-- Canvas -->
     <div class="canvas-container">
         <canvas id="mainCanvas"></canvas>
         <div class="overlay"></div>
     </div>
 
-    <!-- Görgethető tartalom -->
-    <div class="scroll-container">
-        <div class="hero-section"></div>
+    <div class="hero-section"></div>
 
-        <section class="content-section" id="bemutatkozas">
-            <div class="info-card">
-                <h2>Bemutatkozás</h2>
-                <p>
-                    A kamera távolról közelít, felfedi a piramis monumentális
-                    méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi
-                    Egyiptom rejtett csodáit.
-                </p>
-            </div>
-        </section>
+    <section class="content-section" id="bemutatkozas">
+        <div class="info-card">
+            <h1>Piramis Balog</h1>
+            <p>
+                A kamera távolról közelít, felfedi a piramis monumentális
+                méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi
+                Egyiptom rejtett csodáit a Balog Piramis hivatalos oldalán.
+            </p>
+        </div>
+    </section>
 
-        <section class="content-section" id="multunk">
-            <div class="info-card">
-                <h2>Múltunk</h2>
-                <p>
-                    Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit.
-                    Spirálozva ereszkedés közben minden oldalról bemutatjuk az
-                    építményt, feltárva szimmetriáját.
-                </p>
-            </div>
-        </section>
+    <section class="content-section" id="multunk">
+        <div class="info-card">
+            <h2>Múltunk</h2>
+            <p>
+                Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit.
+                Spirálozva ereszkedés közben minden oldalról bemutatjuk az
+                építményt, feltárva szimmetriáját.
+            </p>
+        </div>
+    </section>
 
-        <section class="content-section" id="elerhetoseg">
-            <div class="info-card">
-                <h2>📬 Elérhetőség</h2>
+    <section class="content-section" id="elerhetoseg">
+        <div class="info-card">
+            <h2>📬 Elérhetőség</h2>
 
-                <p>
-                    📧 balogpiramis@gmail.com<br>
-                    📱 Függőben<br>
-                    📍
-                    <a
-                        href="https://maps.app.goo.gl/qzjUGUGYWJE71uWdN6?g_st=ic"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Térkép megnyitása
-                    </a>
-                </p>
+            <p>
+                📧 balogpiramis@gmail.com<br>
+                📱 Függőben<br>
+                📍
+                <a
+                    href="https://maps.app.goo.gl/qzjUGYWwJE71uWdN6?g_st=ic"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Térkép megnyitása
+                </a>
+            </p>
 
-                <iframe
-                    class="map-frame"
-                    src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed"
-                    title="Balogpiramis helye a térképen"
-                    loading="lazy"
-                    allowfullscreen
-                    referrerpolicy="no-referrer-when-downgrade"
-                ></iframe>
+            <iframe
+                class="map-frame"
+                src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed"
+                title="Balogpiramis helye a térképen"
+                loading="lazy"
+                allowfullscreen
+                referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
 
-                <p>
-                    Kövess minket, és légy részese az ősi titkok feltárásának!
-                </p>
-            </div>
-        </section>
-    </div>
+            <p>
+                Kövess minket, és légy részese az ősi titkok feltárásának!
+            </p>
+        </div>
+    </section>
 
     <script>
         (() => {
@@ -539,32 +566,83 @@
             const progressBar = document.getElementById("progressBar");
             const skeletonLoading = document.getElementById("skeletonLoading");
             const skeletonProgress = document.getElementById("skeletonProgress");
+            const scrollIndicator = document.getElementById("scrollIndicator");
             const hamburgerBtn = document.getElementById("hamburgerBtn");
             const menuList = document.getElementById("menuList");
 
-            const FRAME_COUNT = 150;
-            const FRAME_PATH = "./frames/frame_";
+            const FRAME_COUNT = 294;
+            const FRAME_PATH = "./Frames1/frame_";
             const FRAME_EXTENSION = ".webp";
 
-            // Safari & Private Relay optimalizáció: Max 5 párhuzamos kérés
-            const MAX_CONCURRENT_DOWNLOADS = 5;
-
             const isMobile = window.matchMedia("(max-width: 768px)").matches;
-            const frames = new Array(FRAME_COUNT);
+            const FRAME_STEP = isMobile ? 3 : 1;
+            const MAX_CACHED_FRAMES = isMobile ? 24 : 48;
 
-            let loadedCount = 0;
-            let activeDownloads = 0;
-            const downloadQueue = [];
+            const images = new Map();
+            const loadingFrames = new Map();
+            const failedFrames = new Set();
+            const frameUsage = new Map();
 
-            let targetFrame = 0;
-            let currentFrameFloat = 0;
-            let lastRenderedFrame = -1;
+            let currentFrame = -1;
+            let requestedFrame = 0;
+            let rafPending = false;
+            let resizeTimer = null;
+            let firstFrameRendered = false;
+            let usageCounter = 0;
 
-            const getPixelRatio = () => Math.min(window.devicePixelRatio || 1, 1.5);
+            const getPixelRatio = () =>
+                Math.min(window.devicePixelRatio || 1, 1.5);
 
-            function getFrameUrl(index) {
-                const num = String(index + 1).padStart(4, "0");
-                return `${FRAME_PATH}${num}${FRAME_EXTENSION}`;
+            function getFrameUrl(frameIndex) {
+                const frameNumber = String(frameIndex + 1).padStart(4, "0");
+                return `${FRAME_PATH}${frameNumber}${FRAME_EXTENSION}`;
+            }
+
+            function normalizeFrameIndex(frameIndex) {
+                const limited = Math.max(
+                    0,
+                    Math.min(FRAME_COUNT - 1, Math.round(frameIndex))
+                );
+
+                if (FRAME_STEP === 1) {
+                    return limited;
+                }
+
+                return Math.min(
+                    FRAME_COUNT - 1,
+                    Math.round(limited / FRAME_STEP) * FRAME_STEP
+                );
+            }
+
+            function markFrameUsed(frameIndex) {
+                frameUsage.set(frameIndex, ++usageCounter);
+            }
+
+            function trimFrameCache(protectedFrames = []) {
+                if (images.size <= MAX_CACHED_FRAMES) {
+                    return;
+                }
+
+                const protectedSet = new Set(
+                    protectedFrames.map(normalizeFrameIndex)
+                );
+
+                const removable = [...images.keys()]
+                    .filter((frameIndex) => !protectedSet.has(frameIndex))
+                    .sort(
+                        (a, b) =>
+                            (frameUsage.get(a) || 0) -
+                            (frameUsage.get(b) || 0)
+                    );
+
+                while (
+                    images.size > MAX_CACHED_FRAMES &&
+                    removable.length > 0
+                ) {
+                    const frameIndex = removable.shift();
+                    images.delete(frameIndex);
+                    frameUsage.delete(frameIndex);
+                }
             }
 
             function resizeCanvas() {
@@ -579,50 +657,141 @@
 
                 ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-                const activeIndex = Math.round(currentFrameFloat);
-                drawFrame(activeIndex);
+                if (currentFrame >= 0) {
+                    drawBestAvailableFrame(currentFrame);
+                }
             }
 
             function hideSkeleton() {
-                if (skeletonLoading && !skeletonLoading.classList.contains("hidden")) {
-                    skeletonLoading.classList.add("hidden");
+                if (firstFrameRendered) {
+                    return;
+                }
+
+                firstFrameRendered = true;
+                skeletonProgress.textContent = "Kész";
+                skeletonLoading.classList.add("hidden");
+            }
+
+            function loadFrame(frameIndex, priority = "auto") {
+                const normalized = normalizeFrameIndex(frameIndex);
+
+                if (images.has(normalized)) {
+                    markFrameUsed(normalized);
+                    return Promise.resolve(images.get(normalized));
+                }
+
+                if (loadingFrames.has(normalized)) {
+                    return loadingFrames.get(normalized);
+                }
+
+                if (failedFrames.has(normalized)) {
+                    return Promise.resolve(null);
+                }
+
+                const promise = new Promise((resolve) => {
+                    const image = new Image();
+
+                    image.decoding = "async";
+
+                    if ("fetchPriority" in image) {
+                        image.fetchPriority = priority;
+                    }
+
+                    image.onload = async () => {
+                        try {
+                            if (typeof image.decode === "function") {
+                                await image.decode();
+                            }
+                        } catch {}
+
+                        loadingFrames.delete(normalized);
+                        images.set(normalized, image);
+                        markFrameUsed(normalized);
+
+                        trimFrameCache([
+                            normalized,
+                            requestedFrame,
+                            currentFrame
+                        ]);
+
+                        resolve(image);
+                    };
+
+                    image.onerror = () => {
+                        loadingFrames.delete(normalized);
+                        failedFrames.add(normalized);
+
+                        console.warn(`Hiányzó képkocka: ${image.src}`);
+                        resolve(null);
+                    };
+
+                    image.src = getFrameUrl(normalized);
+                });
+
+                loadingFrames.set(normalized, promise);
+                return promise;
+            }
+
+            function findNearestLoadedFrame(targetFrame) {
+                const target = normalizeFrameIndex(targetFrame);
+
+                if (images.has(target)) {
+                    return target;
+                }
+
+                for (
+                    let distance = FRAME_STEP;
+                    distance < FRAME_COUNT;
+                    distance += FRAME_STEP
+                ) {
+                    const previous = target - distance;
+                    const next = target + distance;
+
+                    if (previous >= 0 && images.has(previous)) {
+                        return previous;
+                    }
+
+                    if (next < FRAME_COUNT && images.has(next)) {
+                        return next;
+                    }
+                }
+
+                return null;
+            }
+
+            function drawBestAvailableFrame(targetFrame) {
+                const nearestFrame = findNearestLoadedFrame(targetFrame);
+
+                if (nearestFrame !== null) {
+                    drawFrame(nearestFrame);
                 }
             }
 
-            // Keressük meg a legközelebbi már letöltött képkockát, ha a kívánt még töltődik
-            function findClosestLoadedFrame(targetIndex) {
-                if (frames[targetIndex] && frames[targetIndex].complete && frames[targetIndex].naturalWidth > 0) {
-                    return targetIndex;
+            function drawFrame(frameIndex) {
+                const image = images.get(frameIndex);
+
+                if (
+                    !image ||
+                    !image.complete ||
+                    image.naturalWidth === 0 ||
+                    image.naturalHeight === 0
+                ) {
+                    return;
                 }
 
-                for (let offset = 1; offset < FRAME_COUNT; offset++) {
-                    const left = targetIndex - offset;
-                    if (left >= 0 && frames[left] && frames[left].complete && frames[left].naturalWidth > 0) {
-                        return left;
-                    }
-                    const right = targetIndex + offset;
-                    if (right < FRAME_COUNT && frames[right] && frames[right].complete && frames[right].naturalWidth > 0) {
-                        return right;
-                    }
-                }
-                return -1;
-            }
-
-            // Képkocka kirajzolása
-            function drawFrame(index) {
-                const validIndex = findClosestLoadedFrame(index);
-                if (validIndex === -1) return;
-
-                const image = frames[validIndex];
                 const width = window.innerWidth;
                 const height = window.innerHeight;
                 const canvasRatio = width / height;
-                const imageRatio = image.naturalWidth / image.naturalHeight;
+                const imageRatio =
+                    image.naturalWidth / image.naturalHeight;
 
                 ctx.fillStyle = "#000";
                 ctx.fillRect(0, 0, width, height);
 
-                let coverWidth, coverHeight, coverX, coverY;
+                let coverWidth;
+                let coverHeight;
+                let coverX;
+                let coverY;
 
                 if (imageRatio > canvasRatio) {
                     coverHeight = height;
@@ -637,14 +806,29 @@
                 }
 
                 if (isMobile) {
-                    ctx.drawImage(image, coverX, coverY, coverWidth, coverHeight);
+                    ctx.drawImage(
+                        image,
+                        coverX,
+                        coverY,
+                        coverWidth,
+                        coverHeight
+                    );
                 } else {
                     ctx.save();
                     ctx.filter = "blur(12px) brightness(0.45)";
-                    ctx.drawImage(image, coverX, coverY, coverWidth, coverHeight);
+                    ctx.drawImage(
+                        image,
+                        coverX,
+                        coverY,
+                        coverWidth,
+                        coverHeight
+                    );
                     ctx.restore();
 
-                    let drawWidth, drawHeight, offsetX, offsetY;
+                    let drawWidth;
+                    let drawHeight;
+                    let offsetX;
+                    let offsetY;
 
                     if (imageRatio > canvasRatio) {
                         drawWidth = width;
@@ -658,103 +842,129 @@
                         offsetY = 0;
                     }
 
-                    ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+                    ctx.drawImage(
+                        image,
+                        offsetX,
+                        offsetY,
+                        drawWidth,
+                        drawHeight
+                    );
                 }
 
-                lastRenderedFrame = validIndex;
+                currentFrame = frameIndex;
+                markFrameUsed(frameIndex);
+                hideSkeleton();
+            }
+
+            function preloadAroundFrame(centerFrame) {
+                const center = normalizeFrameIndex(centerFrame);
+                const radius = isMobile ? 6 : 8;
+
+                loadFrame(center, "high");
+
+                for (
+                    let distance = FRAME_STEP;
+                    distance <= radius;
+                    distance += FRAME_STEP
+                ) {
+                    const previous = center - distance;
+                    const next = center + distance;
+
+                    if (next < FRAME_COUNT) {
+                        loadFrame(next, "auto");
+                    }
+
+                    if (previous >= 0) {
+                        loadFrame(previous, "auto");
+                    }
+                }
+
+                trimFrameCache([
+                    center,
+                    currentFrame,
+                    center - FRAME_STEP,
+                    center + FRAME_STEP
+                ]);
             }
 
             function getScrollProgress() {
-                const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                const scrollTop =
+                    window.scrollY ||
+                    document.documentElement.scrollTop ||
+                    0;
 
-                return maxScroll > 0 ? Math.max(0, Math.min(1, scrollTop / maxScroll)) : 0;
+                const maxScroll =
+                    document.documentElement.scrollHeight -
+                    window.innerHeight;
+
+                return maxScroll > 0
+                    ? Math.max(0, Math.min(1, scrollTop / maxScroll))
+                    : 0;
             }
 
-            function renderLoop() {
+            async function ensureRequestedFrame() {
+                const frame = requestedFrame;
+
+                if (images.has(frame)) {
+                    drawFrame(frame);
+                    return;
+                }
+
+                drawBestAvailableFrame(frame);
+
+                const image = await loadFrame(frame, "high");
+
+                if (image && requestedFrame === frame) {
+                    drawFrame(frame);
+                }
+            }
+
+            function updateFromScroll() {
+                rafPending = false;
+
+                const scrollTop =
+                    window.scrollY ||
+                    document.documentElement.scrollTop ||
+                    0;
+
                 const progress = getScrollProgress();
-                targetFrame = progress * (FRAME_COUNT - 1);
 
-                const diff = targetFrame - currentFrameFloat;
-                if (Math.abs(diff) > 0.001) {
-                    currentFrameFloat += diff * 0.15;
-                } else {
-                    currentFrameFloat = targetFrame;
-                }
-
-                const renderIndex = Math.round(currentFrameFloat);
-
-                if (renderIndex !== lastRenderedFrame) {
-                    drawFrame(renderIndex);
-                }
+                requestedFrame = normalizeFrameIndex(
+                    progress * (FRAME_COUNT - 1)
+                );
 
                 progressBar.style.transform = `scaleX(${progress})`;
 
-                requestAnimationFrame(renderLoop);
-            }
+                if (scrollIndicator) {
+                    const opacity = Math.max(0, 1 - scrollTop / 150);
 
-            // Intelligens Letöltési Sor (Concurrency Queue)
-            function queueImageDownload(index) {
-                if (frames[index]) return;
+                    scrollIndicator.style.opacity = String(opacity);
+                    scrollIndicator.style.visibility =
+                        opacity > 0.01 ? "visible" : "hidden";
+                }
 
-                const img = new Image();
-                img.decoding = "async";
-                frames[index] = img;
-
-                downloadQueue.push({ index, img });
-                processQueue();
-            }
-
-            function processQueue() {
-                while (activeDownloads < MAX_CONCURRENT_DOWNLOADS && downloadQueue.length > 0) {
-                    activeDownloads++;
-                    const { index, img } = downloadQueue.shift();
-
-                    img.onload = () => {
-                        loadedCount++;
-                        if (skeletonProgress) {
-                            skeletonProgress.textContent = `Képek betöltése... (${Math.round((loadedCount / FRAME_COUNT) * 100)}%)`;
-                        }
-
-                        // Ha az 1. kép megvan, azonnal nyitjuk a felületet!
-                        if (index === 0) {
-                            drawFrame(0);
-                            hideSkeleton();
-                        }
-
-                        activeDownloads--;
-                        processQueue();
-                    };
-
-                    img.onerror = () => {
-                        activeDownloads--;
-                        processQueue();
-                    };
-
-                    img.src = getFrameUrl(index);
+                if (requestedFrame !== currentFrame) {
+                    ensureRequestedFrame();
+                    preloadAroundFrame(requestedFrame);
                 }
             }
 
-            // Szakaszos betöltési stratégia Safari / Privát átjátszóhoz
-            function startPrioritizedPreload() {
-                // 1. Az legelső képkocka töltődik le
-                queueImageDownload(0);
-
-                // 2. Kulcsképkockák letöltése (minden 5. kép: 5, 10, 15...)
-                for (let i = 5; i < FRAME_COUNT; i += 5) {
-                    queueImageDownload(i);
+            function requestScrollUpdate() {
+                if (rafPending) {
+                    return;
                 }
 
-                // 3. Hiányzó köztes képek sorbafűzése
-                for (let i = 0; i < FRAME_COUNT; i++) {
-                    queueImageDownload(i);
-                }
+                rafPending = true;
+                requestAnimationFrame(updateFromScroll);
             }
 
-            // Menü kezelés
             function toggleMenu() {
                 const active = menuList.classList.toggle("active");
-                hamburgerBtn.setAttribute("aria-expanded", String(active));
+
+                hamburgerBtn.setAttribute(
+                    "aria-expanded",
+                    String(active)
+                );
             }
 
             hamburgerBtn.addEventListener("click", (event) => {
@@ -769,34 +979,91 @@
                 }
             });
 
-            document.querySelectorAll(".menu-list a").forEach((link) => {
-                link.addEventListener("click", (event) => {
-                    event.preventDefault();
+            document
+                .querySelectorAll(".menu-list a")
+                .forEach((link) => {
+                    link.addEventListener("click", (event) => {
+                        event.preventDefault();
 
-                    const target = document.querySelector(link.getAttribute("href"));
-                    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        const target = document.querySelector(
+                            link.getAttribute("href")
+                        );
 
-                    menuList.classList.remove("active");
-                    hamburgerBtn.setAttribute("aria-expanded", "false");
+                        target?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+
+                        menuList.classList.remove("active");
+                        hamburgerBtn.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+                    });
                 });
-            });
 
             document.addEventListener("click", (event) => {
-                if (!hamburgerBtn.contains(event.target) && !menuList.contains(event.target)) {
+                if (
+                    !hamburgerBtn.contains(event.target) &&
+                    !menuList.contains(event.target)
+                ) {
                     menuList.classList.remove("active");
-                    hamburgerBtn.setAttribute("aria-expanded", "false");
+                    hamburgerBtn.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
                 }
             });
 
+            window.addEventListener(
+                "scroll",
+                requestScrollUpdate,
+                { passive: true }
+            );
+
             window.addEventListener("resize", () => {
-                resizeCanvas();
+                clearTimeout(resizeTimer);
+
+                resizeTimer = setTimeout(() => {
+                    resizeCanvas();
+                    requestScrollUpdate();
+                }, 120);
             });
 
-            function initialize() {
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) {
+                    requestScrollUpdate();
+                }
+            });
+
+            async function initialize() {
                 window.scrollTo(0, 0);
                 resizeCanvas();
-                startPrioritizedPreload();
-                requestAnimationFrame(renderLoop);
+
+                skeletonProgress.textContent =
+                    "Első kép betöltése...";
+
+                const firstImage = await loadFrame(0, "high");
+
+                if (firstImage) {
+                    drawFrame(0);
+                } else {
+                    const fallbackFrame = normalizeFrameIndex(FRAME_STEP);
+                    const fallbackImage = await loadFrame(
+                        fallbackFrame,
+                        "high"
+                    );
+
+                    if (fallbackImage) {
+                        drawFrame(fallbackFrame);
+                    } else {
+                        skeletonProgress.textContent =
+                            "A képek nem tölthetők be.";
+                    }
+                }
+
+                preloadAroundFrame(0);
+                requestScrollUpdate();
             }
 
             initialize();
