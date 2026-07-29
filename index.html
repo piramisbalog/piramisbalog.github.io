@@ -527,7 +527,7 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // 📍 MODEL ELFORGATÁSA (Még egy fordulat hozzáadva)
+            // MODEL ELFORGATÁSA
             const pyramidRotationY = -0.55 - (120 * Math.PI / 180) + (2 * Math.PI); 
 
             // Padló síkjának magassága a 3D térben
@@ -654,7 +654,9 @@
 
                         const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z);
                         const scale = 3.6 / maxDim;
-                        pyramidModel.scale.set(scale, scale, scale);
+
+                        // 📍 1. TÜKRÖZÉS X-TENGELYEN (scale.x = -scale), HOGY AZ OSZLOP BALRA KERÜLJÖN!
+                        pyramidModel.scale.set(-scale, scale, scale);
 
                         // ELFORGATÁS
                         pyramidModel.rotation.y = pyramidRotationY;
@@ -665,9 +667,9 @@
                         pyramidModel.position.x -= center.x;
                         pyramidModel.position.z -= center.z;
 
-                        // 📍 MÉG MÉLYEBB SÜLLYESZTÉS (0.64 egység), hogy teljesen rásimuljon a talajra
+                        // 📍 2. MÉG MÉLYEBB SÜLLYESZTÉS (0.85 egység) A TALAJBA
                         const updatedBox = new THREE.Box3().setFromObject(pyramidModel);
-                        const sinkDepth = 0.64; 
+                        const sinkDepth = 0.85; 
                         pyramidModel.position.y = (padloY - sinkDepth) - updatedBox.min.y;
 
                         skeletonLoading.classList.add("hidden");
