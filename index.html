@@ -290,14 +290,6 @@
         .skeleton-text:nth-child(3) { width: 70%; }
         .skeleton-text:nth-child(4) { width: 50%; }
 
-        .skeleton-progress {
-            margin-top: 25px;
-            color: rgba(212, 165, 116, 0.7);
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-            font-weight: 300;
-        }
-
         @keyframes shimmer {
             0% { background-position: -200% 0; }
             100% { background-position: 200% 0; }
@@ -422,10 +414,6 @@
             <div class="skeleton-text"></div>
             <div class="skeleton-text"></div>
         </div>
-
-        <div class="skeleton-progress" id="skeletonProgress">
-            3D Modell betöltése...
-        </div>
     </div>
 
     <!-- Navigáció -->
@@ -537,7 +525,6 @@
             const canvas = document.getElementById("webglCanvas");
             const progressBar = document.getElementById("progressBar");
             const skeletonLoading = document.getElementById("skeletonLoading");
-            const skeletonProgress = document.getElementById("skeletonProgress");
             const hamburgerBtn = document.getElementById("hamburgerBtn");
             const menuList = document.getElementById("menuList");
 
@@ -574,7 +561,7 @@
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 renderer.toneMappingExposure = 1.2;
 
-                // 4. Fények (Arany/Meleg árnyalatú piramis világítás)
+                // 4. Fények
                 const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
                 scene.add(ambientLight);
 
@@ -599,28 +586,20 @@
                         const center = box.getCenter(new THREE.Vector3());
                         const size = box.getSize(new THREE.Vector3());
 
-                        pyramidModel.position.sub(center); // Középpontba mozgatás
+                        pyramidModel.position.sub(center);
 
-                        // Méretezés, hogy szépen elférjen a kijelzőn
                         const maxDim = Math.max(size.x, size.y, size.z);
                         const scale = 3.5 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
                         scene.add(pyramidModel);
 
-                        // Betöltő képernyő elrejtése
-                        skeletonProgress.textContent = "Kész";
+                        // Betöltő képernyő elrejtése szöveg megjelenítése nélkül
                         skeletonLoading.classList.add("hidden");
                     },
-                    (xhr) => {
-                        if (xhr.lengthComputable) {
-                            const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                            skeletonProgress.textContent = `3D Modell betöltése... (${percent}%)`;
-                        }
-                    },
+                    undefined,
                     (error) => {
                         console.error("Hiba a 3D modell betöltésekor:", error);
-                        skeletonProgress.innerHTML = "<span style='color: #ff6b6b;'>Hiba: A piramis.glb fájl nem található!</span>";
                     }
                 );
             }
@@ -638,9 +617,9 @@
 
                 const progress = getScrollProgress();
 
-                // Cél forgás és közeledés meghatározása a görgetés alapján
-                targetRotationY = progress * Math.PI * 4; // 2 teljes fordulat (720 fok)
-                targetZoomZ = 8 - progress * 5.2; // 8-as távolságról közeledik 2.8-ra
+                // PONTOSAN FÉL FORDULAT (180 FOK = Math.PI) A TELJES GÖRGETÉS ALATT
+                targetRotationY = progress * Math.PI; 
+                targetZoomZ = 8 - progress * 5.2;
 
                 // Sima Lerp átmenet a gördülékeny mozgásért
                 currentRotationY += (targetRotationY - currentRotationY) * 0.1;
@@ -648,8 +627,7 @@
 
                 if (pyramidModel) {
                     pyramidModel.rotation.y = currentRotationY;
-                    // Enyhe függőleges billentés görgetés közben
-                    pyramidModel.rotation.x = Math.sin(progress * Math.PI) * 0.2;
+                    pyramidModel.rotation.x = Math.sin(progress * Math.PI) * 0.15;
                 }
 
                 if (camera) {
