@@ -452,7 +452,7 @@
         <div class="overlay"></div>
     </div>
 
-    <!-- Görgethető szekciók -->
+    <!-- Görgethető tartalom -->
     <div class="scroll-container">
         <div class="hero-section"></div>
 
@@ -527,8 +527,8 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // MODEL ELFORGATÁSA
-            const pyramidRotationY = -0.55; 
+            // 📍 MODEL ELFORGATÁSA: Korábbi pozíció + 120 fok balra (kb. 1.54 radián)
+            const pyramidRotationY = -0.55 + (120 * Math.PI / 180); 
 
             // Kamera pozíciók:
             const startCamPos = { x: 0, y: 8.5, z: 0.2 };
@@ -542,14 +542,13 @@
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
-            // 📍 LÁGY KÖRKÖRÖS ÁTMENET (ALPHA MASK) GENERÁLÁSA A PADLÓHOZ
+            // LÁGY KÖRKÖRÖS ÁTMENET (ALPHA MASK) GENERÁLÁSA A PADLÓHOZ
             function createAlphaMaskTexture() {
                 const maskCanvas = document.createElement("canvas");
                 maskCanvas.width = 512;
                 maskCanvas.height = 512;
                 const ctx = maskCanvas.getContext("2d");
 
-                // A közepe látható (fehér), a szélek felé lassan átlátszóvá válik (fekete)
                 const gradient = ctx.createRadialGradient(256, 256, 80, 256, 256, 256);
                 gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
                 gradient.addColorStop(0.6, "rgba(255, 255, 255, 0.8)");
@@ -603,16 +602,16 @@
 
                 const textureLoader = new THREE.TextureLoader();
 
-                // 📍 1. HÁTTÉR KÉP BETÖLTÉSE (hatter.jpg)
+                // 1. HÁTTÉR KÉP BETÖLTÉSE (hatter.jpg)
                 textureLoader.load('./hatter.jpg', (texture) => {
                     scene.background = texture;
                 });
 
-                // 📍 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) LÁGY ÁTMENETTEL A PIRAMIS ALATT
+                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - Kicsit kisebb skála (8.5 x 8.5)
                 const padloTexture = textureLoader.load('./padlo.jpg');
                 const alphaMask = createAlphaMaskTexture();
 
-                const padloGeo = new THREE.PlaneGeometry(12, 12);
+                const padloGeo = new THREE.PlaneGeometry(8.5, 8.5);
                 const padloMat = new THREE.MeshBasicMaterial({
                     map: padloTexture,
                     alphaMap: alphaMask,
@@ -656,6 +655,8 @@
                         pyramidModel.scale.set(scale, scale, scale);
 
                         pyramidModel.position.y = -0.5 + (size.y * scale) / 2;
+                        
+                        // 📍 120 fokos elforgatás balra alkalmazása
                         pyramidModel.rotation.y = pyramidRotationY;
 
                         scene.add(pyramidModel);
