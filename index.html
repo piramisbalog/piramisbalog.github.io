@@ -146,7 +146,7 @@
         .overlay {
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
+            background: radial-gradient(circle at center, transparent 35%, rgba(0, 0, 0, 0.45) 100%);
             z-index: 1;
             pointer-events: none;
         }
@@ -301,7 +301,7 @@
         }
 
         .content-section {
-            min-height: 130vh;
+            min-height: 120vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -527,56 +527,77 @@
             let scene, camera, renderer, pyramidModel, sky, sun;
             let targetRotationY = 0;
             let currentRotationY = 0;
-            let targetZoomZ = 8;
-            let currentZoomZ = 8;
+            let targetZoomZ = 6;
+            let currentZoomZ = 6;
 
-            // Procedurális fű textúra generálása Canvasszal (külső kép letöltése nélkül)
+            // Természetes fű textúra generálása lágy zöld átmenetekkel
             function generateGrassTexture() {
                 const canvasTex = document.createElement("canvas");
                 canvasTex.width = 512;
                 canvasTex.height = 512;
                 const c = canvasTex.getContext("2d");
 
-                // Fű alapzöld szín
-                c.fillStyle = "#2d5a27";
+                // Meleg füves/földes alapszín
+                c.fillStyle = "#335928";
                 c.fillRect(0, 0, 512, 512);
 
-                // Finom fűszál mintázat generálása
-                for (let i = 0; i < 40000; i++) {
+                for (let i = 0; i < 35000; i++) {
                     const x = Math.random() * 512;
                     const y = Math.random() * 512;
                     const shade = Math.random();
                     if (shade > 0.5) {
-                        c.fillStyle = "#3a6f33"; // Világosabb zöld
+                        c.fillStyle = "#416f33";
                     } else if (shade > 0.25) {
-                        c.fillStyle = "#1e3f19"; // Sötétebb zöld
+                        c.fillStyle = "#25421d";
                     } else {
-                        c.fillStyle = "#48823f"; // Friss zöld fűszál
+                        c.fillStyle = "#518542";
                     }
-                    c.fillRect(x, y, 2, 4);
+                    c.fillRect(x, y, 2, 3);
                 }
 
                 const texture = new THREE.CanvasTexture(canvasTex);
                 texture.wrapS = THREE.RepeatWrapping;
                 texture.wrapT = THREE.RepeatWrapping;
-                texture.repeat.set(40, 40); // Textúra ismétlése a nagy síkon
+                texture.repeat.set(30, 30);
                 return texture;
+            }
+
+            function updateCameraAspect() {
+                if (!camera || !renderer) return;
+
+                const aspect = window.innerWidth / window.innerHeight;
+                camera.aspect = aspect;
+
+                // Mobilon (álló nézetben) növeljük a látószöget (FOV), hogy a piramis jól látszódjon
+                if (aspect < 1) {
+                    camera.fov = 55;
+                } else {
+                    camera.fov = 42;
+                }
+
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
             }
 
             function initThree() {
                 // 1. Jelenet
                 scene = new THREE.Scene();
 
-                // 2. Kamera
+                // Horizont és Égbolt köd színének összehangolása (lágy szürkéskék atmoszféra)
+                const fogColor = new THREE.Color(0xaec2d1);
+                scene.fog = new THREE.FogExp2(fogColor, 0.022); // Exponenciális köd a lágy horizontért
+
+                // 2. Kamera beállítása
                 camera = new THREE.PerspectiveCamera(
-                    45,
+                    42,
                     window.innerWidth / window.innerHeight,
                     0.1,
                     1000
                 );
-                camera.position.set(0, 1.5, 8);
+                // Szemmagassághoz közeli kamerapozíció
+                camera.position.set(0, 0.5, 6);
 
-                // 3. Renderelő (GPU gyorsítással és Árnyékokkal)
+                // 3. Renderelő
                 renderer = new THREE.WebGLRenderer({
                     canvas: canvas,
                     antialias: true,
@@ -585,58 +606,56 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 0.8;
+                renderer.toneMappingExposure = 0.9;
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-                // 4. Procedurális Skybox / Égbolt hozzáadása
+                updateCameraAspect();
+
+                // 4. Égbolt (Sky Shader)
                 sky = new THREE.Sky();
                 sky.scale.setScalar(450000);
                 scene.add(sky);
 
                 sun = new THREE.Vector3();
                 const skyUniforms = sky.material.uniforms;
-                skyUniforms['turbidity'].value = 8;
-                skyUniforms['rayleigh'].value = 1.2;
+                skyUniforms['turbidity'].value = 6;
+                skyUniforms['rayleigh'].value = 1.0;
                 skyUniforms['mieCoefficient'].value = 0.005;
                 skyUniforms['mieDirectionalG'].value = 0.8;
 
-                // Nap pozíciója az égbolton (kellemes naplementéhez közeli/délutáni fény)
-                const elevation = 18; // Nap magassága fokban
-                const azimuth = 135;  // Nap iránya
+                // Napfény szögének beállítása
+                const elevation = 16;
+                const azimuth = 135;
                 const phi = THREE.MathUtils.degToRad(90 - elevation);
                 const theta = THREE.MathUtils.degToRad(azimuth);
                 sun.setFromSphericalCoords(1, phi, theta);
                 skyUniforms['sunPosition'].value.copy(sun);
 
                 // 5. Fények
-                const ambientLight = new THREE.AmbientLight(0xfff5ea, 1.2);
+                const ambientLight = new THREE.AmbientLight(0xfff5ea, 1.4);
                 scene.add(ambientLight);
 
-                const mainSun = new THREE.DirectionalLight(0xfff0dd, 2.8);
+                const mainSun = new THREE.DirectionalLight(0xfff0dd, 2.5);
                 mainSun.position.copy(sun).multiplyScalar(100);
                 mainSun.castShadow = true;
                 mainSun.shadow.mapSize.width = 2048;
                 mainSun.shadow.mapSize.height = 2048;
                 mainSun.shadow.camera.near = 0.5;
                 mainSun.shadow.camera.far = 50;
-                mainSun.shadow.camera.left = -10;
-                mainSun.shadow.camera.right = 10;
-                mainSun.shadow.camera.top = 10;
-                mainSun.shadow.camera.bottom = -10;
                 scene.add(mainSun);
 
-                // 6. Fű Talaj Sík (Piramis alatt)
+                // 6. Füves Sík a Piramis Alatt
                 const grassTexture = generateGrassTexture();
-                const planeGeo = new THREE.PlaneGeometry(120, 120);
+                const planeGeo = new THREE.PlaneGeometry(300, 300);
                 const planeMat = new THREE.MeshStandardMaterial({
                     map: grassTexture,
-                    roughness: 0.9,
-                    metalness: 0.1
+                    roughness: 0.95,
+                    metalness: 0.05
                 });
                 const ground = new THREE.Mesh(planeGeo, planeMat);
                 ground.rotation.x = -Math.PI / 2;
-                ground.position.y = -1.2; // Pontosan a piramis alja alá igazítva
+                ground.position.y = -0.8; // Alacsonyabb talajszint
                 ground.receiveShadow = true;
                 scene.add(ground);
 
@@ -648,7 +667,6 @@
                     (gltf) => {
                         pyramidModel = gltf.scene;
 
-                        // Árnyékok bekapcsolása a piramison
                         pyramidModel.traverse((child) => {
                             if (child.isMesh) {
                                 child.castShadow = true;
@@ -656,23 +674,22 @@
                             }
                         });
 
-                        // Modell automatikus középre igazítása és méretezése
                         const box = new THREE.Box3().setFromObject(pyramidModel);
                         const center = box.getCenter(new THREE.Vector3());
                         const size = box.getSize(new THREE.Vector3());
 
                         pyramidModel.position.sub(center);
 
+                        // Optimális méretezés a kijelzőhöz
                         const maxDim = Math.max(size.x, size.y, size.z);
-                        const scale = 3.5 / maxDim;
+                        const scale = 3.2 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        // Igazítás a fű szintjéhez
-                        pyramidModel.position.y = -1.2 + (size.y * scale) / 2;
+                        // Szorosan a fűre fektetjük a piramist
+                        pyramidModel.position.y = -0.8 + (size.y * scale) / 2;
 
                         scene.add(pyramidModel);
 
-                        // Betöltő képernyő elrejtése
                         skeletonLoading.classList.add("hidden");
                     },
                     undefined,
@@ -693,9 +710,11 @@
 
                 const progress = getScrollProgress();
 
-                // Fél fordulat (180 fok = Math.PI) a teljes görgetés alatt
-                targetRotationY = progress * Math.PI; 
-                targetZoomZ = 8 - progress * 4.8;
+                // Fél fordulat (180 fok = Math.PI) a görgetés hossza alatt
+                targetRotationY = progress * Math.PI;
+
+                // Távolság-változás: 6.2-ről finoman közeledik 3.8-ra, hogy a piramis MINDVÉGIG jól látható maradjon
+                targetZoomZ = 6.2 - progress * 2.4;
 
                 currentRotationY += (targetRotationY - currentRotationY) * 0.1;
                 currentZoomZ += (targetZoomZ - currentZoomZ) * 0.1;
@@ -706,6 +725,9 @@
 
                 if (camera) {
                     camera.position.z = currentZoomZ;
+                    // A kamera magassága stabil marad, és mindig a piramis közepét nézi
+                    camera.position.y = 0.5;
+                    camera.lookAt(0, 0.2, 0);
                 }
 
                 progressBar.style.transform = `scaleX(${progress})`;
@@ -715,14 +737,7 @@
                 }
             }
 
-            window.addEventListener("resize", () => {
-                if (!camera || !renderer) return;
-
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
+            window.addEventListener("resize", updateCameraAspect);
 
             function toggleMenu() {
                 const active = menuList.classList.toggle("active");
