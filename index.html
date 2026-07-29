@@ -527,8 +527,11 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // 📍 MODEL ELFORGATÁSA: Korábbi pozíció - 120 fok (120 fok jobbra = -2.64 rad)
+            // 📍 MODEL ELFORGATÁSA (120 fokkal jobbra / ellentétes irányba)
             const pyramidRotationY = -0.55 - (120 * Math.PI / 180); 
+
+            // 📍 PIRAMIS Y POZÍCIÓJA (-0.82-re engedve, hogy rásüllyedjen a padlóra)
+            const pyramidPositionY = -0.82;
 
             // Kamera pozíciók:
             const startCamPos = { x: 0, y: 8.5, z: 0.2 };
@@ -621,7 +624,7 @@
 
                 const padloMesh = new THREE.Mesh(padloGeo, padloMat);
                 padloMesh.rotation.x = -Math.PI / 2;
-                padloMesh.position.y = -0.51; // A padló síkja
+                padloMesh.position.y = -0.51; // Padló síkja
                 scene.add(padloMesh);
 
                 // Bevilágítás a 3D modellhez
@@ -644,7 +647,6 @@
                     (gltf) => {
                         pyramidModel = gltf.scene;
 
-                        // A modell dobozának kiszámítása
                         const box = new THREE.Box3().setFromObject(pyramidModel);
                         const center = box.getCenter(new THREE.Vector3());
                         const size = box.getSize(new THREE.Vector3());
@@ -655,10 +657,10 @@
                         const scale = 3.6 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        // 📍 LEBEGÉS MEGSZÜNTETÉSE: A piramis alját pontosan a padlósíkra (-0.51) helyezzük
-                        pyramidModel.position.y = -0.51 + (box.min.y < 0 ? Math.abs(box.min.y) * scale : 0);
+                        // 📍 LEBEGÉS MEGSZÜNTETÉSE: Fix -0.82-es Y pozíció
+                        pyramidModel.position.y = pyramidPositionY;
                         
-                        // 📍 ELFORGATÁS JOBBRA (120 fok)
+                        // 📍 ELFORGATÁS DÉLI IRÁNYBA
                         pyramidModel.rotation.y = pyramidRotationY;
 
                         scene.add(pyramidModel);
