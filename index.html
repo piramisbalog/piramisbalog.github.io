@@ -450,7 +450,7 @@
         <div class="overlay"></div>
     </div>
 
-    <!-- Görgethető szekciók -->
+    <!-- Görgethető tartalom -->
     <div class="scroll-container">
         <div class="hero-section"></div>
 
@@ -525,13 +525,11 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // 📍 PONTOS MODEL ELFORGATÁS: A bejárat rámpája így pontosan a kamera felé (alulra/szembe) mutat!
-            const pyramidRotationY = 0.55; 
+            // 📍 ELLENTÉTES IRÁNYÚ MODEL ELFORGATÁS (-0.55 rad)
+            const pyramidRotationY = -0.55; 
 
             // Kamera pozíciók:
-            // Kezdőpozíció (Tetején): Tisztességes távolságból fentről letekintő nézet
             const startCamPos = { x: 0, y: 8.5, z: 0.2 };
-            // Célpozíció (Alján): Megfelelő távolságban a bejárat előtt (nem vágódik le a modell!)
             const endCamPos = { x: 0, y: 1.1, z: 5.0 };
 
             // LookAt célpontok
@@ -548,7 +546,6 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 camera.aspect = aspect;
 
-                // Kiegyensúlyozott látószög (FOV)
                 if (aspect < 1) {
                     camera.fov = 55; // Mobil nézet
                 } else {
@@ -617,7 +614,7 @@
                         // Igazítás az origóhoz
                         pyramidModel.position.y = -0.5 + (size.y * scale) / 2;
 
-                        // Bejárati oldal elforgatása a kamera felé
+                        // Bejárati oldal elforgatása ellentétes irányba
                         pyramidModel.rotation.y = pyramidRotationY;
 
                         scene.add(pyramidModel);
