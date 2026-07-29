@@ -342,15 +342,6 @@
             font-size: 1.1rem;
         }
 
-        .info-card a {
-            color: #f4d03f;
-            text-decoration: none;
-        }
-
-        .info-card a:hover {
-            text-decoration: underline;
-        }
-
         .map-frame {
             width: 100%;
             height: 220px;
@@ -483,15 +474,7 @@
 
                 <p>
                     📧 balogpiramis@gmail.com<br>
-                    📱 Függőben<br>
-                    📍
-                    <a
-                        href="https://maps.app.goo.gl/qzjUGYWwJE71uWdN6?g_st=ic"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Térkép megnyitása
-                    </a>
+                    📱 Függőben
                 </p>
 
                 <iframe
@@ -528,7 +511,7 @@
             let scene, camera, renderer, pyramidModel;
 
             // MODEL ELFORGATÁSA
-            const pyramidRotationY = -0.55 - (120 * Math.PI / 180) + (2 * Math.PI); 
+            const pyramidRotationY = 0.5; 
 
             // Padló síkjának magassága a 3D térben
             const padloY = -0.51;
@@ -552,15 +535,33 @@
                 maskCanvas.height = 512;
                 const ctx = maskCanvas.getContext("2d");
 
-                const gradient = ctx.createRadialGradient(256, 256, 80, 256, 256, 256);
+                const gradient = ctx.createRadialGradient(256, 256, 100, 256, 256, 256);
                 gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(0.6, "rgba(255, 255, 255, 0.8)");
+                gradient.addColorStop(0.7, "rgba(255, 255, 255, 0.85)");
                 gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
 
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, 512, 512);
 
                 return new THREE.CanvasTexture(maskCanvas);
+            }
+
+            // KONTAKT-ÁRNYÉK MASK GENERÁLÁSA A MODEL ALÁ
+            function createShadowTexture() {
+                const shadowCanvas = document.createElement("canvas");
+                shadowCanvas.width = 512;
+                shadowCanvas.height = 512;
+                const ctx = shadowCanvas.getContext("2d");
+
+                const gradient = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+                gradient.addColorStop(0, "rgba(0, 0, 0, 0.9)");
+                gradient.addColorStop(0.4, "rgba(0, 0, 0, 0.6)");
+                gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 512, 512);
+
+                return new THREE.CanvasTexture(shadowCanvas);
             }
 
             function updateCameraAspect() {
@@ -614,7 +615,7 @@
                 const padloTexture = textureLoader.load('./padlo.jpg');
                 const alphaMask = createAlphaMaskTexture();
 
-                const padloGeo = new THREE.PlaneGeometry(8.5, 8.5);
+                const padloGeo = new THREE.PlaneGeometry(16, 16);
                 const padloMat = new THREE.MeshBasicMaterial({
                     map: padloTexture,
                     alphaMap: alphaMask,
@@ -626,6 +627,20 @@
                 padloMesh.rotation.x = -Math.PI / 2;
                 padloMesh.position.y = padloY; // -0.51
                 scene.add(padloMesh);
+
+                // 3. KONTAKT-ÁRNYÉK SÍK A PIRAMIS ALATT
+                const shadowTex = createShadowTexture();
+                const shadowGeo = new THREE.PlaneGeometry(6, 6);
+                const shadowMat = new THREE.MeshBasicMaterial({
+                    map: shadowTex,
+                    transparent: true,
+                    opacity: 0.75,
+                    depthWrite: false
+                });
+                const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+                shadowMesh.rotation.x = -Math.PI / 2;
+                shadowMesh.position.y = padloY + 0.01;
+                scene.add(shadowMesh);
 
                 // Bevilágítás a 3D modellhez
                 const ambientLight = new THREE.AmbientLight(0xfff5e6, 1.6);
@@ -649,17 +664,21 @@
 
                         scene.add(pyramidModel);
 
+                        pyramidModel.position.set(0, 0, 0);
+                        pyramidModel.rotation.set(0, 0, 0);
+                        pyramidModel.scale.set(1, 1, 1);
+                        pyramidModel.updateMatrixWorld(true);
+
                         const initialBox = new THREE.Box3().setFromObject(pyramidModel);
                         const initialSize = initialBox.getSize(new THREE.Vector3());
 
                         const maxDim = Math.max(initialSize.x, initialSize.y, initialSize.z);
                         const scale = 3.6 / maxDim;
-
-                        // 📍 1. TÜKRÖZÉS X-TENGELYEN (scale.x = -scale), HOGY AZ OSZLOP BALRA KERÜLJÖN!
-                        pyramidModel.scale.set(-scale, scale, scale);
+                        pyramidModel.scale.set(scale, scale, scale);
 
                         // ELFORGATÁS
                         pyramidModel.rotation.y = pyramidRotationY;
+                        pyramidModel.updateMatrixWorld(true);
 
                         const scaledBox = new THREE.Box3().setFromObject(pyramidModel);
                         const center = scaledBox.getCenter(new THREE.Vector3());
@@ -667,10 +686,9 @@
                         pyramidModel.position.x -= center.x;
                         pyramidModel.position.z -= center.z;
 
-                        // 📍 2. MÉG MÉLYEBB SÜLLYESZTÉS (0.85 egység) A TALAJBA
-                        const updatedBox = new THREE.Box3().setFromObject(pyramidModel);
-                        const sinkDepth = 0.85; 
-                        pyramidModel.position.y = (padloY - sinkDepth) - updatedBox.min.y;
+                        // Rásüllyesztés a talajra
+                        const sinkDepth = 0.15; 
+                        pyramidModel.position.y = (padloY - sinkDepth) - (scaledBox.min.y - pyramidModel.position.y);
 
                         skeletonLoading.classList.add("hidden");
                     },
