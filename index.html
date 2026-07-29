@@ -169,6 +169,7 @@
             transform-origin: left center;
             background: linear-gradient(90deg, #d4a574, #f4d03f);
             box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+            transition: transform 0.05s linear;
         }
 
         /* ---------- BETÖLTÉSI CSONTVAZ ---------- */
@@ -414,9 +415,8 @@
 
     <!-- VIDEÓ KONTAINER -->
     <div class="canvas-container">
-        <video id="mainVideo" muted playsinline preload="metadata">
+        <video id="mainVideo" muted playsinline preload="auto">
             <source src="./Frames1/frames.webm" type="video/webm" />
-            <!-- fallback üzenet -->
             A böngésződ nem támogatja a webm videókat.
         </video>
         <div class="overlay"></div>
@@ -489,11 +489,13 @@
             const hamburgerBtn = document.getElementById("hamburgerBtn");
             const menuList = document.getElementById("menuList");
 
-            // ---- segédváltozók ----
+            // ---- állapotváltozók ----
             let isFirstFrameShown = false;
-            let rafPending = false;
+            let animationFrameId = null;
+            let targetTime = 0;
+            let isVideoReady = false;
 
-            // ---- videó betöltés állapota ----
+            // ---- videó betöltés ----
             function hideSkeleton() {
                 if (isFirstFrameShown) return;
                 isFirstFrameShown = true;
@@ -501,27 +503,43 @@
                 skeletonLoading.classList.add("hidden");
             }
 
-            // ---- videó előkészítés ----
             video.addEventListener("loadedmetadata", () => {
-                // Ha már van betöltött frame, indulhat a skeleton eltüntetése
+                isVideoReady = true;
                 if (video.readyState >= 2) {
                     hideSkeleton();
                 }
+                updateVideoFromScroll();
             });
 
             video.addEventListener("canplay", () => {
+                isVideoReady = true;
                 hideSkeleton();
-                // A scroll alapján állítjuk a pozíciót
                 updateVideoFromScroll();
             });
 
-            // Ha a videó teljesen betöltött (csak biztonság)
             video.addEventListener("loadeddata", () => {
+                isVideoReady = true;
                 hideSkeleton();
                 updateVideoFromScroll();
             });
 
-            // ---- görgetés alapján videó időzítés ----
+            // ---- SIMA videó időzítés requestAnimationFrame segítségével ----
+            function smoothVideoUpdate() {
+                if (!isVideoReady || !video.duration) {
+                    animationFrameId = requestAnimationFrame(smoothVideoUpdate);
+                    return;
+                }
+
+                // Csak akkor állítjuk, ha jelentős az eltérés (> 16ms-nyi idő)
+                const diff = Math.abs(video.currentTime - targetTime);
+                if (diff > 0.01) {
+                    video.currentTime = targetTime;
+                }
+
+                animationFrameId = requestAnimationFrame(smoothVideoUpdate);
+            }
+
+            // ---- görgetés alapján számoljuk a cél időt ----
             function getScrollProgress() {
                 const scrollTop =
                     window.scrollY || document.documentElement.scrollTop || 0;
@@ -533,37 +551,28 @@
             }
 
             function updateVideoFromScroll() {
-                if (rafPending) return;
-                rafPending = true;
-                requestAnimationFrame(() => {
-                    rafPending = false;
+                const progress = getScrollProgress();
 
-                    const progress = getScrollProgress();
-                    // A progresszt sáv frissítése
-                    progressBar.style.transform = `scaleX(${progress})`;
+                // Progress sáv frissítése (CSS transition segít simítani)
+                progressBar.style.transform = `scaleX(${progress})`;
 
-                    // Görgetési jelző elhalványítása
-                    if (scrollIndicator) {
-                        const opacity = Math.max(0, 1 - window.scrollY / 150);
-                        scrollIndicator.style.opacity = String(opacity);
-                        scrollIndicator.style.visibility =
-                            opacity > 0.01 ? "visible" : "hidden";
-                    }
+                // Görgetési jelző elhalványítása
+                if (scrollIndicator) {
+                    const opacity = Math.max(0, 1 - window.scrollY / 150);
+                    scrollIndicator.style.opacity = String(opacity);
+                    scrollIndicator.style.visibility =
+                        opacity > 0.01 ? "visible" : "hidden";
+                }
 
-                    // Videó idő beállítása (0 … duration)
-                    if (video.duration && isFinite(video.duration)) {
-                        const targetTime = progress * video.duration;
-                        // csak akkor állítjuk, ha jelentős az eltérés (1ms)
-                        if (Math.abs(video.currentTime - targetTime) > 0.005) {
-                            video.currentTime = targetTime;
-                        }
-                    }
+                // Cél idő beállítása
+                if (video.duration && isFinite(video.duration)) {
+                    targetTime = progress * video.duration;
+                }
 
-                    // Ha még nem tűnt el a skeleton, és van betöltött frame, eltüntetjük
-                    if (!isFirstFrameShown && video.readyState >= 2) {
-                        hideSkeleton();
-                    }
-                });
+                // Ha még nem tűnt el a skeleton, és van betöltött frame, eltüntetjük
+                if (!isFirstFrameShown && video.readyState >= 2) {
+                    hideSkeleton();
+                }
             }
 
             // ---- események ----
@@ -572,11 +581,9 @@
             });
 
             window.addEventListener("resize", () => {
-                // csak a progress frissítése miatt
                 updateVideoFromScroll();
             });
 
-            // ha a lap ismét láthatóvá válik, frissítsük a pozíciót
             document.addEventListener("visibilitychange", () => {
                 if (!document.hidden) {
                     updateVideoFromScroll();
@@ -623,22 +630,25 @@
                 }
             });
 
-            // ---- kezdeti pozíció ----
+            // ---- indítás ----
             window.scrollTo(0, 0);
 
-            // Ha a videó már készen van az első betöltéskor, tüntessük el a skeleton-t
+            // Ha a videó már készen van, tüntessük el a skeleton-t
             if (video.readyState >= 2) {
+                isVideoReady = true;
                 hideSkeleton();
             }
 
-            // Biztonsági időzítő: ha 4 másodperc után sem történt semmi, akkor is rejtsük el a skeleton-t
-            // (akár csak egy fekete képernyőt mutatva)
+            // Biztonsági időzítő
             setTimeout(() => {
                 if (!isFirstFrameShown) {
                     hideSkeleton();
                     skeletonProgress.textContent = "Betöltve";
                 }
             }, 4000);
+
+            // Sima videó frissítés indítása
+            smoothVideoUpdate();
 
             // Első scroll frissítés
             updateVideoFromScroll();
