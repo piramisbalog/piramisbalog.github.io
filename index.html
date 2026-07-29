@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link
+        rel="preload"
+        as="image"
+        href="./Frames1/frame_0001.webp"
+        type="image/webp"
+        fetchpriority="high"
+    >
+
+    <title>Piramis - Műholdtól a Bejáratig</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #000;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .menu-container {
+            position: fixed;
+            top: 25px;
+            left: 25px;
+            z-index: 1000;
+        }
+
+        .hamburger-icon {
+            width: 36px;
+            height: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            background: rgba(10, 10, 10, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 8px;
+            padding: 10px 8px;
+            transition: background 0.3s ease, border-color 0.3s ease;
+            border: 1px solid rgba(212, 165, 116, 0.25);
+        }
+
+        .hamburger-icon:hover {
+            background: rgba(10, 10, 10, 0.65);
+            border-color: rgba(212, 165, 116, 0.5);
+        }
+
+        .hamburger-icon span {
+            display: block;
+            width: 100%;
+            height: 2.5px;
+            background: #d4a574;
+            border-radius: 3px;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .menu-list {
+            position: absolute;
+            top: 55px;
+            left: 0;
+            background: rgba(10, 10, 10, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 12px 0;
+            min-width: 200px;
+            border: 1px solid rgba(212, 165, 116, 0.25);
+            transform: translateY(-10px);
+            opacity: 0;
+            visibility: hidden;
+            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+            will-change: transform, opacity;
+        }
+
+        .menu-list.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .menu-list a {
+            display: block;
+            color: #d4a574;
+            text-decoration: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            transition: background 0.2s ease, padding-left 0.2s ease, color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .menu-list a:hover {
+            background: rgba(212, 165, 116, 0.15);
+            padding-left: 28px;
+            color: #f4d03f;
+        }
+
+        .canvas-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: #000;
+            z-index: 0;
+        }
+
+        #mainCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            contain: strict;
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .scroll-indicator {
+            position: fixed;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            color: white;
+            font-size: 0.9rem;
+            opacity: 1;
+            animation: bounce 2s infinite;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+            pointer-events: none;
+            background: rgba(10, 10, 10, 0.6);
+            padding: 10px 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(212, 165, 116, 0.3);
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            will-change: transform, opacity;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+
+        .progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.05);
+            z-index: 100;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 100%;
+            transform: scaleX(0);
+            transform-origin: left center;
+            will-change: transform;
+            background: linear-gradient(90deg, #d4a574, #f4d03f);
+            box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+        }
+
+        .skeleton-loading {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+            will-change: opacity;
+        }
+
+        .skeleton-loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .skeleton-canvas {
+            width: 90%;
+            max-width: 400px;
+            aspect-ratio: 9 / 16;
+            max-height: 70vh;
+            background: linear-gradient(
+                90deg,
+                rgba(212, 165, 116, 0.05) 0%,
+                rgba(212, 165, 116, 0.12) 50%,
+                rgba(212, 165, 116, 0.05) 100%
+            );
+            background-size: 200% 100%;
+            border-radius: 16px;
+            animation: shimmer 1.8s infinite ease-in-out;
+            border: 1px solid rgba(212, 165, 116, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .skeleton-canvas::before {
+            content: "";
+            position: absolute;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 80px solid transparent;
+            border-right: 80px solid transparent;
+            border-bottom: 140px solid rgba(212, 165, 116, 0.08);
+        }
+
+        .skeleton-text-container {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 90%;
+            max-width: 350px;
+        }
+
+        .skeleton-text {
+            height: 14px;
+            border-radius: 7px;
+            background: linear-gradient(
+                90deg,
+                rgba(212, 165, 116, 0.05) 0%,
+                rgba(212, 165, 116, 0.12) 50%,
+                rgba(212, 165, 116, 0.05) 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.8s infinite ease-in-out;
+        }
+
+        .skeleton-text:first-child {
+            width: 60%;
+            height: 18px;
+            border-radius: 9px;
+        }
+
+        .skeleton-text:nth-child(2) {
+            width: 85%;
+        }
+
+        .skeleton-text:nth-child(3) {
+            width: 70%;
+        }
+
+        .skeleton-text:nth-child(4) {
+            width: 50%;
+        }
+
+        .skeleton-progress {
+            margin-top: 25px;
+            color: rgba(212, 165, 116, 0.6);
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .hero-section {
+            height: 100vh;
+            position: relative;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .content-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: transparent;
+            position: relative;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .info-card {
+            background: rgba(10, 10, 10, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 165, 116, 0.25);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 550px;
+            width: 100%;
+            text-align: center;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            pointer-events: auto;
+        }
+
+        .info-card h2 {
+            font-size: 2rem;
+            color: #d4a574;
+            margin-bottom: 1rem;
+        }
+
+        .info-card p {
+            color: #ccc;
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        .info-card a {
+            color: #f4d03f;
+            text-decoration: none;
+        }
+
+        .info-card a:hover {
+            text-decoration: underline;
+        }
+
+        .map-frame {
+            width: 100%;
+            height: 220px;
+            border: 0;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .info-card {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+
+            .menu-container {
+                top: 15px;
+                left: 15px;
+            }
+
+            .hamburger-icon {
+                width: 30px;
+                height: 24px;
+                padding: 8px 6px;
+            }
+
+            .skeleton-canvas {
+                max-width: 280px;
+                max-height: 60vh;
+            }
+
+            .skeleton-canvas::before {
+                border-left-width: 55px;
+                border-right-width: 55px;
+                border-bottom-width: 100px;
+            }
+
+            .scroll-indicator {
+                font-size: 0.8rem;
+                padding: 8px 16px;
+                bottom: 25px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            .scroll-indicator,
+            .skeleton-canvas,
+            .skeleton-text {
+                animation: none;
+            }
+
+            .menu-list,
+            .skeleton-loading {
+                transition: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="skeleton-loading" id="skeletonLoading">
+        <div class="skeleton-canvas"></div>
+
+        <div class="skeleton-text-container">
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text"></div>
+        </div>
+
+        <div class="skeleton-progress" id="skeletonProgress">Első kép betöltése...</div>
+    </div>
+
+    <nav class="menu-container" aria-label="Főmenü">
+        <div
+            class="hamburger-icon"
+            id="hamburgerBtn"
+            role="button"
+            tabindex="0"
+            aria-label="Menü megnyitása"
+            aria-expanded="false"
+            aria-controls="menuList"
+        >
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div class="menu-list" id="menuList">
+            <a href="#bemutatkozas">Bemutatkozás</a>
+            <a href="#multunk">Múltunk</a>
+            <a href="#elerhetoseg">Elérhetőség</a>
+        </div>
+    </nav>
+
+    <div class="progress-container" aria-hidden="true">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="scroll-indicator" id="scrollIndicator">
+        ↓ Görgess lefelé ↓
+    </div>
+
+    <div class="canvas-container" id="canvasSection">
+        <canvas id="mainCanvas"></canvas>
+        <div class="overlay"></div>
+    </div>
+
+    <div class="hero-section"></div>
+
+    <section class="content-section" id="bemutatkozas">
+        <div class="info-card">
+            <h2>Bemutatkozás</h2>
+            <p>
+                A kamera távolról közelít, felfedi a piramis monumentális
+                méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi
+                Egyiptom rejtett csodáit.
+            </p>
+        </div>
+    </section>
+
+    <section class="content-section" id="multunk">
+        <div class="info-card">
+            <h2>Múltunk</h2>
+            <p>
+                Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit.
+                Spirálozva ereszkedés közben minden oldalról bemutatjuk az
+                építményt, feltárva szimmetriáját.
+            </p>
+        </div>
+    </section>
+
+    <section class="content-section" id="elerhetoseg">
+        <div class="info-card">
+            <h2>📬 Elérhetőség</h2>
+
+            <p>
+                📧 balogpiramis@gmail.com<br>
+                📱 Függőben<br>
+                📍
+                <a
+                    href="https://maps.app.goo.gl/qzjUGYYwJE71uWdN6?g_st=ic"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Térkép megnyitása
+                </a>
+            </p>
+
+            <iframe
+                class="map-frame"
+                src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed"
+                title="Balogpiramis helye a térképen"
+                loading="lazy"
+                allowfullscreen
+                referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
+
+            <p>
+                Kövess minket, és légy részese az ősi titkok feltárásának!
+            </p>
+        </div>
+    </section>
+
+    <script>
+        (() => {
+            "use strict";
+
+            if ("scrollRestoration" in history) {
+                history.scrollRestoration = "manual";
+            }
+
+            const canvas = document.getElementById("mainCanvas");
+            const ctx = canvas.getContext("2d", {
+                alpha: false,
+                desynchronized: true
+            });
+
+            const progressBar = document.getElementById("progressBar");
+            const skeletonLoading = document.getElementById("skeletonLoading");
+            const skeletonProgress = document.getElementById("skeletonProgress");
+            const scrollIndicator = document.getElementById("scrollIndicator");
+            const hamburgerBtn = document.getElementById("hamburgerBtn");
+            const menuList = document.getElementById("menuList");
+
+            const FRAME_COUNT = 294;
+            const FRAME_PATH = "./Frames1/frame_";
+            const FRAME_EXTENSION = ".webp";
+
+            const isMobile = window.matchMedia("(max-width: 768px)").matches;
+            const FRAME_STEP = isMobile ? 2 : 1;
+
+            const images = new Array(FRAME_COUNT);
+            const loadingFrames = new Set();
+            const loadedFrames = new Set();
+            const failedFrames = new Set();
+
+            let currentFrame = -1;
+            let requestedFrame = 0;
+            let rafPending = false;
+            let resizeTimer = null;
+            let firstFrameRendered = false;
+            let backgroundLoadingStarted = false;
+
+            const getPixelRatio = () =>
+                Math.min(window.devicePixelRatio || 1, 1.5);
+
+            function getFrameUrl(frameIndex) {
+                const number = String(frameIndex + 1).padStart(4, "0");
+                return `${FRAME_PATH}${number}${FRAME_EXTENSION}`;
+            }
+
+            function normalizeFrameIndex(frameIndex) {
+                const limited = Math.max(
+                    0,
+                    Math.min(FRAME_COUNT - 1, Math.round(frameIndex))
+                );
+
+                if (FRAME_STEP === 1) {
+                    return limited;
+                }
+
+                return Math.min(
+                    FRAME_COUNT - 1,
+                    Math.round(limited / FRAME_STEP) * FRAME_STEP
+                );
+            }
+
+            function resizeCanvas() {
+                const dpr = getPixelRatio();
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+
+                canvas.width = Math.round(width * dpr);
+                canvas.height = Math.round(height * dpr);
+                canvas.style.width = `${width}px`;
+                canvas.style.height = `${height}px`;
+
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                if (currentFrame >= 0) {
+                    drawBestAvailableFrame(currentFrame);
+                }
+            }
+
+            function hideSkeleton() {
+                if (firstFrameRendered) {
+                    return;
+                }
+
+                firstFrameRendered = true;
+                skeletonLoading.classList.add("hidden");
+            }
+
+            function updateLoadingProgress() {
+                const relevantCount = Math.ceil(FRAME_COUNT / FRAME_STEP);
+                const completed = loadedFrames.size + failedFrames.size;
+                const percent = Math.min(
+                    100,
+                    Math.round((completed / relevantCount) * 100)
+                );
+
+                skeletonProgress.textContent = `${percent}%`;
+            }
+
+            function loadFrame(frameIndex, priority = "auto") {
+                const normalized = normalizeFrameIndex(frameIndex);
+
+                if (images[normalized]) {
+                    return Promise.resolve(images[normalized]);
+                }
+
+                if (
+                    loadingFrames.has(normalized) ||
+                    failedFrames.has(normalized)
+                ) {
+                    return Promise.resolve(null);
+                }
+
+                loadingFrames.add(normalized);
+
+                return new Promise((resolve) => {
+                    const image = new Image();
+                    image.decoding = "async";
+
+                    if ("fetchPriority" in image) {
+                        image.fetchPriority = priority;
+                    }
+
+                    image.onload = async () => {
+                        loadingFrames.delete(normalized);
+                        loadedFrames.add(normalized);
+                        images[normalized] = image;
+
+                        try {
+                            if (typeof image.decode === "function") {
+                                await image.decode();
+                            }
+                        } catch {
+                            // A kép már használható.
+                        }
+
+                        updateLoadingProgress();
+
+                        if (
+                            normalized === requestedFrame ||
+                            normalized === 0 ||
+                            !firstFrameRendered
+                        ) {
+                            drawBestAvailableFrame(requestedFrame);
+                        }
+
+                        resolve(image);
+                    };
+
+                    image.onerror = () => {
+                        loadingFrames.delete(normalized);
+                        failedFrames.add(normalized);
+                        updateLoadingProgress();
+
+                        console.warn(`Hiányzó képkocka: ${image.src}`);
+                        resolve(null);
+                    };
+
+                    image.src = getFrameUrl(normalized);
+                });
+            }
+
+            function findNearestLoadedFrame(targetFrame) {
+                const target = normalizeFrameIndex(targetFrame);
+
+                if (loadedFrames.has(target)) {
+                    return target;
+                }
+
+                for (
+                    let distance = FRAME_STEP;
+                    distance < FRAME_COUNT;
+                    distance += FRAME_STEP
+                ) {
+                    const previous = target - distance;
+                    const next = target + distance;
+
+                    if (previous >= 0 && loadedFrames.has(previous)) {
+                        return previous;
+                    }
+
+                    if (next < FRAME_COUNT && loadedFrames.has(next)) {
+                        return next;
+                    }
+                }
+
+                return null;
+            }
+
+            function drawBestAvailableFrame(targetFrame) {
+                const frame = findNearestLoadedFrame(targetFrame);
+
+                if (frame !== null) {
+                    drawFrame(frame);
+                }
+            }
+
+            function drawFrame(frameIndex) {
+                const image = images[frameIndex];
+
+                if (
+                    !image ||
+                    !image.complete ||
+                    image.naturalWidth === 0 ||
+                    image.naturalHeight === 0
+                ) {
+                    return;
+                }
+
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                const canvasRatio = width / height;
+                const imageRatio =
+                    image.naturalWidth / image.naturalHeight;
+
+                ctx.fillStyle = "#000";
+                ctx.fillRect(0, 0, width, height);
+
+                let coverWidth;
+                let coverHeight;
+                let coverX;
+                let coverY;
+
+                if (imageRatio > canvasRatio) {
+                    coverHeight = height;
+                    coverWidth = coverHeight * imageRatio;
+                    coverX = (width - coverWidth) / 2;
+                    coverY = 0;
+                } else {
+                    coverWidth = width;
+                    coverHeight = coverWidth / imageRatio;
+                    coverX = 0;
+                    coverY = (height - coverHeight) / 2;
+                }
+
+                if (isMobile) {
+                    ctx.drawImage(
+                        image,
+                        coverX,
+                        coverY,
+                        coverWidth,
+                        coverHeight
+                    );
+                } else {
+                    ctx.save();
+                    ctx.filter = "blur(14px) brightness(0.45)";
+                    ctx.drawImage(
+                        image,
+                        coverX,
+                        coverY,
+                        coverWidth,
+                        coverHeight
+                    );
+                    ctx.restore();
+
+                    let drawWidth;
+                    let drawHeight;
+                    let offsetX;
+                    let offsetY;
+
+                    if (imageRatio > canvasRatio) {
+                        drawWidth = width;
+                        drawHeight = drawWidth / imageRatio;
+                        offsetX = 0;
+                        offsetY = (height - drawHeight) / 2;
+                    } else {
+                        drawHeight = height;
+                        drawWidth = drawHeight * imageRatio;
+                        offsetX = (width - drawWidth) / 2;
+                        offsetY = 0;
+                    }
+
+                    ctx.drawImage(
+                        image,
+                        offsetX,
+                        offsetY,
+                        drawWidth,
+                        drawHeight
+                    );
+                }
+
+                currentFrame = frameIndex;
+                hideSkeleton();
+            }
+
+            function preloadAroundFrame(centerFrame, radius = 12) {
+                const center = normalizeFrameIndex(centerFrame);
+
+                loadFrame(center, "high");
+
+                for (
+                    let distance = FRAME_STEP;
+                    distance <= radius;
+                    distance += FRAME_STEP
+                ) {
+                    const next = center + distance;
+                    const previous = center - distance;
+
+                    if (next < FRAME_COUNT) {
+                        loadFrame(next, "auto");
+                    }
+
+                    if (previous >= 0) {
+                        loadFrame(previous, "auto");
+                    }
+                }
+            }
+
+            async function loadFramesInBackground() {
+                if (backgroundLoadingStarted) {
+                    return;
+                }
+
+                backgroundLoadingStarted = true;
+
+                const frames = [];
+
+                for (
+                    let index = 0;
+                    index < FRAME_COUNT;
+                    index += FRAME_STEP
+                ) {
+                    if (
+                        !images[index] &&
+                        !loadingFrames.has(index) &&
+                        !failedFrames.has(index)
+                    ) {
+                        frames.push(index);
+                    }
+                }
+
+                let position = 0;
+                const concurrentLoads = isMobile ? 2 : 4;
+
+                async function worker() {
+                    while (position < frames.length) {
+                        const frameIndex = frames[position++];
+                        await loadFrame(frameIndex, "low");
+                    }
+                }
+
+                await Promise.all(
+                    Array.from(
+                        { length: concurrentLoads },
+                        () => worker()
+                    )
+                );
+            }
+
+            function getScrollProgress() {
+                const scrollTop =
+                    window.scrollY ||
+                    document.documentElement.scrollTop ||
+                    0;
+
+                const maxScroll =
+                    document.documentElement.scrollHeight -
+                    window.innerHeight;
+
+                return maxScroll > 0
+                    ? Math.max(0, Math.min(1, scrollTop / maxScroll))
+                    : 0;
+            }
+
+            function updateFromScroll() {
+                rafPending = false;
+
+                const scrollTop =
+                    window.scrollY ||
+                    document.documentElement.scrollTop ||
+                    0;
+
+                const progress = getScrollProgress();
+
+                requestedFrame = normalizeFrameIndex(
+                    progress * (FRAME_COUNT - 1)
+                );
+
+                progressBar.style.transform = `scaleX(${progress})`;
+
+                if (scrollIndicator) {
+                    const opacity = Math.max(0, 1 - scrollTop / 150);
+                    scrollIndicator.style.opacity = String(opacity);
+                    scrollIndicator.style.visibility =
+                        opacity > 0.01 ? "visible" : "hidden";
+                }
+
+                if (requestedFrame !== currentFrame) {
+                    if (loadedFrames.has(requestedFrame)) {
+                        drawFrame(requestedFrame);
+                    } else {
+                        drawBestAvailableFrame(requestedFrame);
+                        loadFrame(requestedFrame, "high");
+                    }
+
+                    preloadAroundFrame(
+                        requestedFrame,
+                        isMobile ? 8 : 16
+                    );
+                }
+            }
+
+            function requestScrollUpdate() {
+                if (rafPending) {
+                    return;
+                }
+
+                rafPending = true;
+                requestAnimationFrame(updateFromScroll);
+            }
+
+            function toggleMenu() {
+                const active = menuList.classList.toggle("active");
+                hamburgerBtn.setAttribute(
+                    "aria-expanded",
+                    String(active)
+                );
+            }
+
+            hamburgerBtn.addEventListener("click", (event) => {
+                event.stopPropagation();
+                toggleMenu();
+            });
+
+            hamburgerBtn.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    toggleMenu();
+                }
+            });
+
+            document
+                .querySelectorAll(".menu-list a")
+                .forEach((link) => {
+                    link.addEventListener("click", (event) => {
+                        event.preventDefault();
+
+                        const target = document.querySelector(
+                            link.getAttribute("href")
+                        );
+
+                        target?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start"
+                        });
+
+                        menuList.classList.remove("active");
+                        hamburgerBtn.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+                    });
+                });
+
+            document.addEventListener("click", (event) => {
+                if (
+                    !hamburgerBtn.contains(event.target) &&
+                    !menuList.contains(event.target)
+                ) {
+                    menuList.classList.remove("active");
+                    hamburgerBtn.setAttribute(
+                        "aria-expanded",
+                        "false"
+                    );
+                }
+            });
+
+            window.addEventListener(
+                "scroll",
+                requestScrollUpdate,
+                { passive: true }
+            );
+
+            window.addEventListener("resize", () => {
+                clearTimeout(resizeTimer);
+
+                resizeTimer = setTimeout(() => {
+                    resizeCanvas();
+                    requestScrollUpdate();
+                }, 120);
+            });
+
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) {
+                    requestScrollUpdate();
+                }
+            });
+
+            async function initialize() {
+                window.scrollTo(0, 0);
+                resizeCanvas();
+
+                const firstImage = await loadFrame(0, "high");
+
+                if (firstImage) {
+                    drawFrame(0);
+                } else {
+                    await loadFrame(FRAME_STEP, "high");
+                    drawBestAvailableFrame(FRAME_STEP);
+                }
+
+                preloadAroundFrame(0, isMobile ? 8 : 16);
+                requestScrollUpdate();
+
+                const startBackgroundLoading = () => {
+                    loadFramesInBackground().catch((error) => {
+                        console.error(
+                            "Háttérbetöltési hiba:",
+                            error
+                        );
+                    });
+                };
+
+                if ("requestIdleCallback" in window) {
+                    requestIdleCallback(startBackgroundLoading, {
+                        timeout: 2500
+                    });
+                } else {
+                    setTimeout(startBackgroundLoading, 1000);
+                }
+            }
+
+            initialize();
+        })();
+    </script>
+</body>
+</html>
