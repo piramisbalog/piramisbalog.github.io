@@ -529,9 +529,9 @@
             let targetRotationY = 0;
             let currentRotationY = 0;
             
-            // A kamera távolsága Z tengelyen megnövelve 6.5-re (a piramis messzebb kerül)
-            let targetZoomZ = 6.5; 
-            let currentZoomZ = 6.5;
+            // Közelebbi Z pozíció (3.5), hogy a piramis ne tűnjön törpének az ultra-széles látószögben
+            let targetZoomZ = 3.5; 
+            let currentZoomZ = 3.5;
 
             // Kontakt-árnyék generálása a piramis alá
             function createShadowTexture() {
@@ -558,9 +558,9 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 camera.aspect = aspect;
 
-                // ULTRA-SZÉLES látószög (FOV): 105° PC-n és 110° mobilon
+                // Mobilon (portré nézetben, aspect < 1) pontosan 120°-os ultra-széles látószög
                 if (aspect < 1) {
-                    camera.fov = 110; 
+                    camera.fov = 120; 
                 } else {
                     camera.fov = 105; 
                 }
@@ -572,15 +572,17 @@
             function initThree() {
                 scene = new THREE.Scene();
 
-                // Kamera inicializálása 105°-os ultraszéles FOV-val
+                const isMobile = (window.innerWidth / window.innerHeight) < 1;
+                const initialFov = isMobile ? 120 : 105;
+
                 camera = new THREE.PerspectiveCamera(
-                    105, 
+                    initialFov, 
                     window.innerWidth / window.innerHeight,
                     0.1,
                     2000
                 );
-                // Kezdőpozíció: magasság y = 1.8, távolság z = 6.5 (messzebb lévő piramis)
-                camera.position.set(0, 1.8, 6.5);
+                // Kezdőpozíció: Z = 3.5
+                camera.position.set(0, 1.2, 3.5);
 
                 renderer = new THREE.WebGLRenderer({
                     canvas: canvas,
@@ -679,8 +681,8 @@
 
                 targetRotationY = progress * Math.PI;
 
-                // Távolabbról indul (6.5), és görgetéskor lassan közelít (4.0-ig)
-                targetZoomZ = 6.5 - progress * 2.5; 
+                // 3.5-ről indul, görgetéskor lassan közelebb léptet (2.3-ig)
+                targetZoomZ = 3.5 - progress * 1.2; 
 
                 currentRotationY += (targetRotationY - currentRotationY) * 0.1;
                 currentZoomZ += (targetZoomZ - currentZoomZ) * 0.1;
@@ -695,8 +697,8 @@
 
                 if (camera) {
                     camera.position.z = currentZoomZ;
-                    camera.position.y = 1.8 - progress * 0.5;
-                    camera.lookAt(0, 0.4, 0);
+                    camera.position.y = 1.2 - progress * 0.4;
+                    camera.lookAt(0, 0.3, 0);
                 }
 
                 progressBar.style.transform = `scaleX(${progress})`;
