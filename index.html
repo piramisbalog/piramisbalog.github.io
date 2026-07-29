@@ -528,8 +528,10 @@
             let scene, camera, renderer, pyramidModel, skySphere;
             let targetRotationY = 0;
             let currentRotationY = 0;
-            let targetZoomZ = 7.5;
-            let currentZoomZ = 7.5;
+            
+            // Cseréltük az induló Z pozíciókat: a kamera közelebb kerül, hogy kompenzálja a szélesebb látószöget
+            let targetZoomZ = 4.5;
+            let currentZoomZ = 4.5;
 
             // Kontakt-árnyék generálása a piramis alá
             function createShadowTexture() {
@@ -556,11 +558,11 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 camera.aspect = aspect;
 
-                // Mobilon nagyobb FOV a megfelelő arányú kijelzéshez
+                // MEGOLDÁS: Magasabb FOV értékek (Field of View), hogy a háttér "kizoomolt" legyen.
                 if (aspect < 1) {
-                    camera.fov = 48;
+                    camera.fov = 75; // 48 helyett
                 } else {
-                    camera.fov = 36;
+                    camera.fov = 60; // 36 helyett
                 }
 
                 camera.updateProjectionMatrix();
@@ -571,15 +573,15 @@
                 // 1. Jelenet
                 scene = new THREE.Scene();
 
-                // 2. Kamera (Feljebb emelve, hogy jobb rálátás legyen)
+                // 2. Kamera (megnövelt látószög (60) és közelebbi pozíció (4.5))
                 camera = new THREE.PerspectiveCamera(
-                    36,
+                    60, 
                     window.innerWidth / window.innerHeight,
                     0.1,
                     2000
                 );
-                // Kamera magassága y = 1.8 (Szemmagasság felett)
-                camera.position.set(0, 1.8, 7.5);
+                // Kamera magassága y = 1.1, távolsága z = 4.5
+                camera.position.set(0, 1.1, 4.5);
 
                 // 3. Renderelő beállításai
                 renderer = new THREE.WebGLRenderer({
@@ -594,7 +596,7 @@
 
                 updateCameraAspect();
 
-                // 4. 360° Panoráma Gömb (SkySphere) - Megfelelő méretben!
+                // 4. 360° Panoráma Gömb (SkySphere)
                 const sphereGeometry = new THREE.SphereGeometry(1000, 60, 40);
                 sphereGeometry.scale(-1, 1, 1); // Belső felület látható
 
@@ -681,8 +683,8 @@
                 // Fél fordulat (180 fok = Math.PI) a görgetés hossza alatt
                 targetRotationY = progress * Math.PI;
 
-                // Távolság állítása görgetéskor
-                targetZoomZ = 7.5 - progress * 2.0;
+                // Távolság állítása görgetéskor (kisebb intervallumon mozog a szélesebb látószög miatt)
+                targetZoomZ = 4.5 - progress * 1.5; // 4.5-ről 3.0-ra közelít
 
                 currentRotationY += (targetRotationY - currentRotationY) * 0.1;
                 currentZoomZ += (targetZoomZ - currentZoomZ) * 0.1;
@@ -698,8 +700,8 @@
 
                 if (camera) {
                     camera.position.z = currentZoomZ;
-                    // Megemelt kameramagasság: y = 1.8-ról finoman mozdul y = 1.4-re
-                    camera.position.y = 1.8 - progress * 0.4;
+                    // Mivel közelebbről nézzük, a magasság is finomabban változik
+                    camera.position.y = 1.1 - progress * 0.3;
                     camera.lookAt(0, 0.4, 0);
                 }
 
