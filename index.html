@@ -525,17 +525,17 @@
             // Three.js Alapváltozók
             let scene, camera, renderer, pyramidModel;
 
-            // Kamera pozíciók interpolációhoz:
-            // Kezdőpozíció (Oldal teteje): Magasan felülről tekintünk le (Y = 6.5, Z = 1.2)
-            const startCamPos = { x: 0, y: 6.5, z: 1.2 };
-            // Célpozíció (Oldal alja): Szemmagasságban a bejárat előtt (Y = 0.25, Z = 1.9)
-            const endCamPos = { x: 0, y: 0.25, z: 1.9 };
+            // Kamera pozíciók:
+            // Kezdőpozíció (Oldal teteje): Magasból felülnézet
+            const startCamPos = { x: 0, y: 6.0, z: 0.1 };
+            // Célpozíció (Oldal alja): A bejárat és az obeliszk előtt szemmagasságban
+            const endCamPos = { x: 0, y: 0.25, z: 2.2 };
 
-            // Kamera lookAt célpontok:
+            // LookAt célpontok
             const startTarget = { x: 0, y: 0, z: 0 };
-            const endTarget = { x: 0, y: 0.2, z: 0.5 };
+            const endTarget = { x: 0, y: 0.15, z: 0.3 };
 
-            // Állapotváltozók a lágy mozgáshoz (LERP)
+            // Állapotváltozók LERP simításhoz
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
@@ -545,7 +545,6 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 camera.aspect = aspect;
 
-                // Természetes látószög beállítása
                 if (aspect < 1) {
                     camera.fov = 65; // Mobil nézet
                 } else {
@@ -558,7 +557,7 @@
 
             function initThree() {
                 scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x0a0a0a); // Tiszta, sötét háttér
+                scene.background = new THREE.Color(0x0a0a0a);
 
                 camera = new THREE.PerspectiveCamera(
                     50,
@@ -581,7 +580,7 @@
 
                 updateCameraAspect();
 
-                // Bevilágítás a piramis részleteinek kiemeléséhez
+                // Bevilágítás
                 const ambientLight = new THREE.AmbientLight(0xfff8eb, 1.8);
                 scene.add(ambientLight);
 
@@ -614,6 +613,9 @@
                         // Igazítás az origóhoz
                         pyramidModel.position.y = -0.5 + (size.y * scale) / 2;
 
+                        // 📍 ELFORGATÁS: A bejárat és az obeliszk elölre (a kamera leereszkedési iránya felé) mutasson
+                        pyramidModel.rotation.y = -Math.PI * 0.7; // ~ -126 fokos elforgatás
+
                         scene.add(pyramidModel);
 
                         skeletonLoading.classList.add("hidden");
@@ -636,7 +638,7 @@
 
                 const progress = getScrollProgress();
 
-                // Célpozíciók kiszámítása a görgetés alapján
+                // Célpozíciók
                 const targetCamX = startCamPos.x + (endCamPos.x - startCamPos.x) * progress;
                 const targetCamY = startCamPos.y + (endCamPos.y - startCamPos.y) * progress;
                 const targetCamZ = startCamPos.z + (endCamPos.z - startCamPos.z) * progress;
@@ -645,7 +647,7 @@
                 const targetLookY = startTarget.y + (endTarget.y - startTarget.y) * progress;
                 const targetLookZ = startTarget.z + (endTarget.z - startTarget.z) * progress;
 
-                // Finom mozgás-simítás (LERP)
+                // LERP simítás
                 currentCam.x += (targetCamX - currentCam.x) * 0.08;
                 currentCam.y += (targetCamY - currentCam.y) * 0.08;
                 currentCam.z += (targetCamZ - currentCam.z) * 0.08;
