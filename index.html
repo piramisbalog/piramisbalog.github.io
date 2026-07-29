@@ -131,7 +131,7 @@
             width: 100%;
             height: 100vh;
             overflow: hidden;
-            background: #000;
+            background: #111;
             z-index: 0;
         }
 
@@ -143,10 +143,11 @@
             display: block;
         }
 
+        /* Finom sötétítés a kártyák jobb olvashatóságáért */
         .overlay {
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.35) 100%);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.4) 100%);
             z-index: 1;
             pointer-events: none;
         }
@@ -164,7 +165,7 @@
             animation: bounce 2s infinite;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
             pointer-events: none;
-            background: rgba(10, 10, 10, 0.6);
+            background: rgba(10, 10, 10, 0.65);
             padding: 10px 20px;
             border-radius: 25px;
             backdrop-filter: blur(8px);
@@ -312,9 +313,9 @@
         }
 
         .info-card {
-            background: rgba(10, 10, 10, 0.62);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(10, 10, 10, 0.65);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border: 1px solid rgba(212, 165, 116, 0.25);
             border-radius: 24px;
             padding: 3rem;
@@ -322,7 +323,7 @@
             width: 100%;
             text-align: center;
             box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.45),
+                0 8px 32px rgba(0, 0, 0, 0.5),
                 inset 0 1px 0 rgba(255, 255, 255, 0.08);
             pointer-events: auto;
         }
@@ -392,9 +393,8 @@
         }
     </style>
 
-    <!-- Three.js, Sky Shader és GLTFLoader CDN-ről -->
+    <!-- Three.js és GLTFLoader CDN-ről -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Sky.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 
@@ -524,46 +524,11 @@
             const menuList = document.getElementById("menuList");
 
             // Three.js Alapváltozók
-            let scene, camera, renderer, pyramidModel, sky, sun;
+            let scene, camera, renderer, pyramidModel;
             let targetRotationY = 0;
             let currentRotationY = 0;
-            let targetZoomZ = 7;
-            let currentZoomZ = 7;
-
-            // Természetes, mezei fű textúra generálása fotó alapján
-            function generateRealisticFieldTexture() {
-                const canvasTex = document.createElement("canvas");
-                canvasTex.width = 1024;
-                canvasTex.height = 1024;
-                const c = canvasTex.getContext("2d");
-
-                // Meleg zöldes-földes alapszín
-                c.fillStyle = "#3e5c2b";
-                c.fillRect(0, 0, 1024, 1024);
-
-                // Finom fű és mező mintázat generálása
-                for (let i = 0; i < 70000; i++) {
-                    const x = Math.random() * 1024;
-                    const y = Math.random() * 1024;
-                    const shade = Math.random();
-                    if (shade > 0.6) {
-                        c.fillStyle = "#4a6e34"; // Friss mezei zöld
-                    } else if (shade > 0.3) {
-                        c.fillStyle = "#2c401d"; // Sötétebb árnyékos fű
-                    } else if (shade > 0.15) {
-                        c.fillStyle = "#5c823f"; // Világos zöld fűszál
-                    } else {
-                        c.fillStyle = "#6b5832"; // Föld/szárazabb foltok
-                    }
-                    c.fillRect(x, y, 2, 4);
-                }
-
-                const texture = new THREE.CanvasTexture(canvasTex);
-                texture.wrapS = THREE.RepeatWrapping;
-                texture.wrapT = THREE.RepeatWrapping;
-                texture.repeat.set(40, 40);
-                return texture;
-            }
+            let targetZoomZ = 5.5;
+            let currentZoomZ = 5.5;
 
             function updateCameraAspect() {
                 if (!camera || !renderer) return;
@@ -571,11 +536,10 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 camera.aspect = aspect;
 
-                // Mobilon nagyobb látószög (FOV), hogy az oszlop és a piramis is jól elférjen
                 if (aspect < 1) {
-                    camera.fov = 58;
+                    camera.fov = 54;
                 } else {
-                    camera.fov = 44;
+                    camera.fov = 42;
                 }
 
                 camera.updateProjectionMatrix();
@@ -586,19 +550,21 @@
                 // 1. Jelenet
                 scene = new THREE.Scene();
 
-                // 2. Lágy horizonti köd (szürkéskék égbolt összemodás)
-                const fogColor = new THREE.Color(0xb2c8d8);
-                scene.fog = new THREE.FogExp2(fogColor, 0.018);
+                // 2. Fotóháttér betöltése (Saját helyszíni fotó)
+                const textureLoader = new THREE.TextureLoader();
+                textureLoader.load('./hatter.jpg', (texture) => {
+                    scene.background = texture;
+                });
 
                 // 3. Kamera
                 camera = new THREE.PerspectiveCamera(
-                    44,
+                    42,
                     window.innerWidth / window.innerHeight,
                     0.1,
                     1000
                 );
-                // Mérsékelt szemmagasság a monumentális látványért
-                camera.position.set(0, 0.8, 7);
+                // A fotó perspektívájához igazított kameramagasság
+                camera.position.set(0, 0.4, 5.5);
 
                 // 4. Renderelő beállításai
                 renderer = new THREE.WebGLRenderer({
@@ -609,67 +575,42 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.0;
+                renderer.toneMappingExposure = 1.05;
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
                 updateCameraAspect();
 
-                // 5. Nappali Égbolt (Sky Shader)
-                sky = new THREE.Sky();
-                sky.scale.setScalar(450000);
-                scene.add(sky);
-
-                sun = new THREE.Vector3();
-                const skyUniforms = sky.material.uniforms;
-                skyUniforms['turbidity'].value = 5;
-                skyUniforms['rayleigh'].value = 0.8;
-                skyUniforms['mieCoefficient'].value = 0.004;
-                skyUniforms['mieDirectionalG'].value = 0.82;
-
-                // Napfény beállítása a fotón látható lágy délutáni fényhez
-                const elevation = 24;
-                const azimuth = 135;
-                const phi = THREE.MathUtils.degToRad(90 - elevation);
-                const theta = THREE.MathUtils.degToRad(azimuth);
-                sun.setFromSphericalCoords(1, phi, theta);
-                skyUniforms['sunPosition'].value.copy(sun);
-
-                // 6. Fények (Természetes szórt fény + erős napfény)
-                const ambientLight = new THREE.AmbientLight(0xfff7ec, 1.3);
+                // 5. Fotónak megfelelő meleg, természetes napfény
+                const ambientLight = new THREE.AmbientLight(0xfff8eb, 1.5);
                 scene.add(ambientLight);
 
-                const hemiLight = new THREE.HemisphereLight(0xb2c8d8, 0x3e5c2b, 0.8);
-                scene.add(hemiLight);
-
-                const mainSun = new THREE.DirectionalLight(0xfff2df, 2.6);
-                mainSun.position.copy(sun).multiplyScalar(100);
+                const mainSun = new THREE.DirectionalLight(0xfff0dd, 2.2);
+                mainSun.position.set(6, 12, 8);
                 mainSun.castShadow = true;
                 mainSun.shadow.mapSize.width = 2048;
                 mainSun.shadow.mapSize.height = 2048;
                 mainSun.shadow.camera.near = 0.5;
-                mainSun.shadow.camera.far = 60;
-                mainSun.shadow.camera.left = -12;
-                mainSun.shadow.camera.right = 12;
-                mainSun.shadow.camera.top = 12;
-                mainSun.shadow.camera.bottom = -12;
+                mainSun.shadow.camera.far = 50;
                 scene.add(mainSun);
 
-                // 7. Mezei Füves Talaj Sík
-                const grassTexture = generateRealisticFieldTexture();
-                const planeGeo = new THREE.PlaneGeometry(350, 300);
-                const planeMat = new THREE.MeshStandardMaterial({
-                    map: grassTexture,
-                    roughness: 0.9,
-                    metalness: 0.05
-                });
-                const ground = new THREE.Mesh(planeGeo, planeMat);
-                ground.rotation.x = -Math.PI / 2;
-                ground.position.y = -0.9;
-                ground.receiveShadow = true;
-                scene.add(ground);
+                const fillLight = new THREE.DirectionalLight(0xaac4d8, 0.8);
+                fillLight.position.set(-6, 4, -4);
+                scene.add(fillLight);
 
-                // 8. 3D Modell Betöltése (Piramis + Oszlop)
+                // 6. Láthatatlan Árnyékfelfogó Talaj (Shadow Receiver)
+                // Maga a fű a fotóháttér része, erre vetődik rá a 3D modell árnyéka!
+                const planeGeo = new THREE.PlaneGeometry(100, 100);
+                const shadowMat = new THREE.ShadowMaterial({
+                    opacity: 0.35 // Lágy árnyék a fűre
+                });
+                const shadowPlane = new THREE.Mesh(planeGeo, shadowMat);
+                shadowPlane.rotation.x = -Math.PI / 2;
+                shadowPlane.position.y = -0.7;
+                shadowPlane.receiveShadow = true;
+                scene.add(shadowPlane);
+
+                // 7. 3D Modell Betöltése (Piramis + Oszlop)
                 const loader = new THREE.GLTFLoader();
 
                 loader.load(
@@ -690,13 +631,12 @@
 
                         pyramidModel.position.sub(center);
 
-                        // Méretezés úgy, hogy az oszlop és piramis is jól látsszon
                         const maxDim = Math.max(size.x, size.y, size.z);
-                        const scale = 3.6 / maxDim;
+                        const scale = 3.5 / maxDim;
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        // Talajhoz igazítás
-                        pyramidModel.position.y = -0.9 + (size.y * scale) / 2;
+                        // Pozícionálás a fotó fűszintjéhez
+                        pyramidModel.position.y = -0.7 + (size.y * scale) / 2;
 
                         scene.add(pyramidModel);
 
@@ -720,11 +660,11 @@
 
                 const progress = getScrollProgress();
 
-                // Fél fordulat (180 fok = Math.PI) a görgetés teljes hossza alatt
+                // Fél fordulat (180 fok = Math.PI) a görgetés teljes ideje alatt
                 targetRotationY = progress * Math.PI;
 
-                // Távolság-változás: 7-ről finoman közeledik 4.8-ra, hogy a modell MINDVÉGIG látványos maradjon
-                targetZoomZ = 7 - progress * 2.2;
+                // Távolság finomhangolása: Közeledés a piramishoz
+                targetZoomZ = 5.5 - progress * 1.8;
 
                 currentRotationY += (targetRotationY - currentRotationY) * 0.1;
                 currentZoomZ += (targetZoomZ - currentZoomZ) * 0.1;
@@ -735,9 +675,8 @@
 
                 if (camera) {
                     camera.position.z = currentZoomZ;
-                    // Stabil kameramagasság, amely mindig a modell fókuszát tartja
-                    camera.position.y = 0.7;
-                    camera.lookAt(0, 0.4, 0);
+                    camera.position.y = 0.4;
+                    camera.lookAt(0, 0.2, 0);
                 }
 
                 progressBar.style.transform = `scaleX(${progress})`;
