@@ -508,7 +508,7 @@
             const menuList = document.getElementById("menuList");
 
             // Three.js Alapváltozók
-            let scene, camera, renderer, pyramidModel;
+            let scene, camera, renderer, pyramidModel, hatterMesh;
 
             // Kamera alapértelmezett pozíciói
             const startCamPos = { x: 0, y: 7.0, z: 0.1 };
@@ -520,16 +520,17 @@
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
-            // Lágy széli átmenet a padlóhoz
+            // 📍 LÁGY SZÉLI KÖD A PADLÓHOZ (Graduális átmenet)
             function createAlphaMaskTexture() {
                 const maskCanvas = document.createElement("canvas");
                 maskCanvas.width = 512;
                 maskCanvas.height = 512;
                 const ctx = maskCanvas.getContext("2d");
 
-                const gradient = ctx.createRadialGradient(256, 256, 120, 256, 256, 256);
+                const gradient = ctx.createRadialGradient(256, 256, 80, 256, 256, 256);
                 gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(0.7, "rgba(255, 255, 255, 0.8)");
+                gradient.addColorStop(0.5, "rgba(255, 255, 255, 0.85)");
+                gradient.addColorStop(0.85, "rgba(255, 255, 255, 0.3)");
                 gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
 
                 ctx.fillStyle = gradient;
@@ -557,6 +558,10 @@
             function initThree() {
                 scene = new THREE.Scene();
 
+                // 📍 FINOM KÖD A JELENETBEN (A távoli részek és szél finom elhalványításához)
+                const fogColor = new THREE.Color(0x0a0a0a);
+                scene.fog = new THREE.FogExp2(fogColor, 0.08);
+
                 camera = new THREE.PerspectiveCamera(
                     55,
                     window.innerWidth / window.innerHeight,
@@ -580,16 +585,24 @@
 
                 const textureLoader = new THREE.TextureLoader();
 
-                // 1. HÁTTÉR KÉP BETÖLTÉSE (hatter.jpg)
+                // 📍 1. HÁTTÉR KÉP 3D SÍKON (hatter.jpg) - EGYÜTT MOZOG A PADLÓVAL ÉS KAMERÁVAL
                 textureLoader.load('./hatter.jpg', (texture) => {
-                    scene.background = texture;
+                    const hatterGeo = new THREE.PlaneGeometry(35, 25);
+                    const hatterMat = new THREE.MeshBasicMaterial({
+                        map: texture,
+                        depthWrite: false,
+                        fog: false
+                    });
+                    hatterMesh = new THREE.Mesh(hatterGeo, hatterMat);
+                    hatterMesh.position.set(0, 2, -10); // A 3D tér háttérsíkja
+                    scene.add(hatterMesh);
                 });
 
-                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - Origónál elhelyezve (0, 0, 0)
+                // 📍 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - LÁGY KÖD MASKKAL
                 const padloTexture = textureLoader.load('./padlo.jpg');
                 const alphaMask = createAlphaMaskTexture();
 
-                const padloGeo = new THREE.PlaneGeometry(10, 10);
+                const padloGeo = new THREE.PlaneGeometry(12, 12);
                 const padloMat = new THREE.MeshBasicMaterial({
                     map: padloTexture,
                     alphaMap: alphaMask,
@@ -599,7 +612,7 @@
 
                 const padloMesh = new THREE.Mesh(padloGeo, padloMat);
                 padloMesh.rotation.x = -Math.PI / 2; // Vízszintes síkba fektetve
-                padloMesh.position.set(0.5, -0.5, -2);    // Kinullázott pozíció!
+                padloMesh.position.set(0.5, -0.5, -2);
                 scene.add(padloMesh);
 
                 // Bevilágítás
@@ -614,7 +627,7 @@
                 fillLight.position.set(-6, 4, -5);
                 scene.add(fillLight);
 
-                // 3D Piramis Modell Betöltése - KINULLÁZVA!
+                // 3D Piramis Modell Betöltése
                 const loader = new THREE.GLTFLoader();
 
                 loader.load(
@@ -622,12 +635,10 @@
                     (gltf) => {
                         pyramidModel = gltf.scene;
 
-                        // Tiszta alaphelyzet
                         pyramidModel.position.set(-1, 0, 0);
                         pyramidModel.rotation.set(0, THREE.MathUtils.degToRad(220), 0);
                         pyramidModel.scale.set(1, 1, 1);
 
-                        // Egyenletes méretezés
                         const box = new THREE.Box3().setFromObject(pyramidModel);
                         const size = box.getSize(new THREE.Vector3());
                         const maxDim = Math.max(size.x, size.y, size.z);
@@ -635,7 +646,6 @@
                         
                         pyramidModel.scale.set(scale, scale, scale);
 
-                        // Modell hozzáadása közvetlenül az origóba (0, 0, 0)
                         scene.add(pyramidModel);
 
                         skeletonLoading.classList.add("hidden");
@@ -677,6 +687,11 @@
                 if (camera) {
                     camera.position.set(currentCam.x, currentCam.y, currentCam.z);
                     camera.lookAt(currentLook.x, currentLook.y, currentLook.z);
+                }
+
+                // 📍 PARALLAXIS: A háttér finom igazítása a kamera mozgásához
+                if (hatterMesh) {
+                    hatterMesh.position.y = 2 - progress * 1.5;
                 }
 
                 progressBar.style.transform = `scaleX(${progress})`;
