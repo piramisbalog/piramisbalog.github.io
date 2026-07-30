@@ -520,8 +520,8 @@
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
-            // 📍 SOKKAL LÁGYABB, HOSSZABB ELMOSÓDÁSÚ PADLÓ MASZK (NINCS ÉLES VÁGÁS)
-            function createAlphaMaskTexture() {
+            // 📍 KÜLÖNLEGES PEREM-MASZK: A belső rész 100%-ig tömör, csak a külső sáv mosódik el
+            function createEdgeFadeMaskTexture() {
                 const maskCanvas = document.createElement("canvas");
                 maskCanvas.width = 512;
                 maskCanvas.height = 512;
@@ -530,17 +530,15 @@
                 ctx.fillStyle = "#000000";
                 ctx.fillRect(0, 0, 512, 512);
 
-                // Hosszú, fokozatos elmosódás a szélén, hogy teljesen lágyan olvadjon be
-                const gradient = ctx.createRadialGradient(256, 256, 20, 256, 256, 235);
+                // A középső sugár (0-tól 185 pixelig) teljesen fehér (100% tömör padló, nincs átlátszóság!)
+                // Csak 185 pixeltől 250 pixelig indul a lágy perem-elmosódás
+                const gradient = ctx.createRadialGradient(256, 256, 185, 256, 256, 250);
                 gradient.addColorStop(0.0, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(0.45, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(0.7, "rgba(255, 255, 255, 0.75)");
-                gradient.addColorStop(0.88, "rgba(255, 255, 255, 0.25)");
                 gradient.addColorStop(1.0, "rgba(255, 255, 255, 0)");
 
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(256, 256, 235, 0, Math.PI * 2);
+                ctx.arc(256, 256, 250, 0, Math.PI * 2);
                 ctx.fill();
 
                 const texture = new THREE.CanvasTexture(maskCanvas);
@@ -567,8 +565,6 @@
 
             function initThree() {
                 scene = new THREE.Scene();
-
-                // Globális ködöt eltávolítottuk, hogy a 3D modell éles és tiszta maradjon
 
                 camera = new THREE.PerspectiveCamera(
                     55,
@@ -605,25 +601,32 @@
                     scene.add(hatterMesh);
                 });
 
-                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - NAGYON HOSSZÚ, LÁGY SZÉLI ELMOSÓDÁSSAL
+                // 2. FŐ PADLÓ (TELJESEN TÖMÖR ÉS ÉLES A KÖZEPÉN)
                 const padloTexture = textureLoader.load('./padlo.jpg');
-                padloTexture.wrapS = THREE.ClampToEdgeWrapping;
-                padloTexture.wrapT = THREE.ClampToEdgeWrapping;
-
-                const alphaMask = createAlphaMaskTexture();
-
-                const padloGeo = new THREE.PlaneGeometry(13, 13);
+                const padloGeo = new THREE.PlaneGeometry(8, 8); // Kisebb belső tömör padló
                 const padloMat = new THREE.MeshBasicMaterial({
                     map: padloTexture,
-                    alphaMap: alphaMask,
-                    transparent: true,
-                    depthWrite: false
+                    transparent: false,
+                    depthWrite: true
                 });
-
                 const padloMesh = new THREE.Mesh(padloGeo, padloMat);
                 padloMesh.rotation.x = -Math.PI / 2;
                 padloMesh.position.set(0.5, -0.5, -2);
                 scene.add(padloMesh);
+
+                // 3. 📍 ÚJ ÁTMENETI PEREM-RÉTEG (Csak a széleken futó, lágyan elmosódó körgyűrű)
+                const edgeMask = createEdgeFadeMaskTexture();
+                const edgeGeo = new THREE.PlaneGeometry(13, 13); // Nagyobb külső gyűrű
+                const edgeMat = new THREE.MeshBasicMaterial({
+                    map: padloTexture,
+                    alphaMap: edgeMask,
+                    transparent: true,
+                    depthWrite: false
+                });
+                const edgeMesh = new THREE.Mesh(edgeGeo, edgeMat);
+                edgeMesh.rotation.x = -Math.PI / 2;
+                edgeMesh.position.set(0.5, -0.505, -2); // Picit alatta, hogy ne villogjon
+                scene.add(edgeMesh);
 
                 // Bevilágítás
                 const ambientLight = new THREE.AmbientLight(0xfff5e6, 1.6);
