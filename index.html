@@ -520,36 +520,6 @@
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
-            // 📍 TÖKÉLETES LÁGY ÁTMENET MASK GENERÁLÁSA (PITCH BLACK PADDING A SZÉLEKEN)
-            function createAlphaMaskTexture() {
-                const maskCanvas = document.createElement("canvas");
-                maskCanvas.width = 512;
-                maskCanvas.height = 512;
-                const ctx = maskCanvas.getContext("2d");
-
-                // 1. Teljes vászon feltöltése feketével (100% átlátszóság a szélén)
-                ctx.fillStyle = "#000000";
-                ctx.fillRect(0, 0, 512, 512);
-
-                // 2. Finom, fokozatos sugárirányú átmenet rajzolása (a szélén 0-ig fut le)
-                const gradient = ctx.createRadialGradient(256, 256, 40, 256, 256, 210);
-                gradient.addColorStop(0.0, "#ffffff");
-                gradient.addColorStop(0.35, "#ffffff");
-                gradient.addColorStop(0.65, "#888888");
-                gradient.addColorStop(0.85, "#222222");
-                gradient.addColorStop(1.0, "#000000");
-
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(256, 256, 210, 0, Math.PI * 2);
-                ctx.fill();
-
-                const texture = new THREE.CanvasTexture(maskCanvas);
-                texture.wrapS = THREE.ClampToEdgeWrapping;
-                texture.wrapT = THREE.ClampToEdgeWrapping;
-                return texture;
-            }
-
             function updateCameraAspect() {
                 if (!camera || !renderer) return;
 
@@ -592,31 +562,26 @@
 
                 const textureLoader = new THREE.TextureLoader();
 
-                // 📍 1. HÁTTÉR KÉP A 3D TÉR MÖGÖTT (hatter.jpg) - EGYÜTT MOZOG A KAMERÁVAL
+                // 📍 1. MAGASABB HÁTTÉR KÉP A 3D TÉRBEN (hatter.jpg)
                 textureLoader.load('./hatter.jpg', (texture) => {
-                    const hatterGeo = new THREE.PlaneGeometry(45, 30);
+                    const hatterGeo = new THREE.PlaneGeometry(55, 35);
                     const hatterMat = new THREE.MeshBasicMaterial({
                         map: texture,
                         depthWrite: false
                     });
                     hatterMesh = new THREE.Mesh(hatterGeo, hatterMat);
-                    hatterMesh.position.set(0, 3, -12); // A 3D tér mélyén elhelyezett háttér
+                    hatterMesh.position.set(0, 6, -15); // Megemelve Y=6 magasságba
                     scene.add(hatterMesh);
                 });
 
-                // 📍 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - LÁGY KÖRDÖS LEFUTÁSSAL
+                // 📍 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - TELJESEN TÖMÖR, NEM ÁTLÁTSZÓ
                 const padloTexture = textureLoader.load('./padlo.jpg');
-                padloTexture.wrapS = THREE.ClampToEdgeWrapping;
-                padloTexture.wrapT = THREE.ClampToEdgeWrapping;
-
-                const alphaMask = createAlphaMaskTexture();
 
                 const padloGeo = new THREE.PlaneGeometry(12, 12);
                 const padloMat = new THREE.MeshBasicMaterial({
                     map: padloTexture,
-                    alphaMap: alphaMask,
-                    transparent: true,
-                    depthWrite: false
+                    transparent: false, // Nem átlátszó
+                    depthWrite: true
                 });
 
                 const padloMesh = new THREE.Mesh(padloGeo, padloMat);
@@ -698,9 +663,9 @@
                     camera.lookAt(currentLook.x, currentLook.y, currentLook.z);
                 }
 
-                // 📍 HÁTTÉR PARALLAXIS MOZGÁSA A GÖRGETÉSSEL
+                // 📍 HÁTTÉR PARALLAXIS MOZGÁSA A KÖVETKEZŐ MAGASSÁGRÓL
                 if (hatterMesh) {
-                    hatterMesh.position.y = 3 - progress * 2.0;
+                    hatterMesh.position.y = 6 - progress * 2.5;
                 }
 
                 progressBar.style.transform = `scaleX(${progress})`;
