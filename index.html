@@ -520,23 +520,34 @@
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
-            // 📍 LÁGY SZÉLI KÖD A PADLÓHOZ (Graduális átmenet)
+            // 📍 TÖKÉLETES LÁGY ÁTMENET MASK GENERÁLÁSA (PITCH BLACK PADDING A SZÉLEKEN)
             function createAlphaMaskTexture() {
                 const maskCanvas = document.createElement("canvas");
                 maskCanvas.width = 512;
                 maskCanvas.height = 512;
                 const ctx = maskCanvas.getContext("2d");
 
-                const gradient = ctx.createRadialGradient(256, 256, 80, 256, 256, 256);
-                gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(0.5, "rgba(255, 255, 255, 0.85)");
-                gradient.addColorStop(0.85, "rgba(255, 255, 255, 0.3)");
-                gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
-
-                ctx.fillStyle = gradient;
+                // 1. Teljes vászon feltöltése feketével (100% átlátszóság a szélén)
+                ctx.fillStyle = "#000000";
                 ctx.fillRect(0, 0, 512, 512);
 
-                return new THREE.CanvasTexture(maskCanvas);
+                // 2. Finom, fokozatos sugárirányú átmenet rajzolása (a szélén 0-ig fut le)
+                const gradient = ctx.createRadialGradient(256, 256, 40, 256, 256, 210);
+                gradient.addColorStop(0.0, "#ffffff");
+                gradient.addColorStop(0.35, "#ffffff");
+                gradient.addColorStop(0.65, "#888888");
+                gradient.addColorStop(0.85, "#222222");
+                gradient.addColorStop(1.0, "#000000");
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(256, 256, 210, 0, Math.PI * 2);
+                ctx.fill();
+
+                const texture = new THREE.CanvasTexture(maskCanvas);
+                texture.wrapS = THREE.ClampToEdgeWrapping;
+                texture.wrapT = THREE.ClampToEdgeWrapping;
+                return texture;
             }
 
             function updateCameraAspect() {
@@ -557,10 +568,6 @@
 
             function initThree() {
                 scene = new THREE.Scene();
-
-                // 📍 FINOM KÖD A JELENETBEN (A távoli részek és szél finom elhalványításához)
-                const fogColor = new THREE.Color(0x0a0a0a);
-                scene.fog = new THREE.FogExp2(fogColor, 0.08);
 
                 camera = new THREE.PerspectiveCamera(
                     55,
@@ -585,21 +592,23 @@
 
                 const textureLoader = new THREE.TextureLoader();
 
-                // 📍 1. HÁTTÉR KÉP 3D SÍKON (hatter.jpg) - EGYÜTT MOZOG A PADLÓVAL ÉS KAMERÁVAL
+                // 📍 1. HÁTTÉR KÉP A 3D TÉR MÖGÖTT (hatter.jpg) - EGYÜTT MOZOG A KAMERÁVAL
                 textureLoader.load('./hatter.jpg', (texture) => {
-                    const hatterGeo = new THREE.PlaneGeometry(35, 25);
+                    const hatterGeo = new THREE.PlaneGeometry(45, 30);
                     const hatterMat = new THREE.MeshBasicMaterial({
                         map: texture,
-                        depthWrite: false,
-                        fog: false
+                        depthWrite: false
                     });
                     hatterMesh = new THREE.Mesh(hatterGeo, hatterMat);
-                    hatterMesh.position.set(0, 2, -10); // A 3D tér háttérsíkja
+                    hatterMesh.position.set(0, 3, -12); // A 3D tér mélyén elhelyezett háttér
                     scene.add(hatterMesh);
                 });
 
-                // 📍 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - LÁGY KÖD MASKKAL
+                // 📍 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - LÁGY KÖRDÖS LEFUTÁSSAL
                 const padloTexture = textureLoader.load('./padlo.jpg');
+                padloTexture.wrapS = THREE.ClampToEdgeWrapping;
+                padloTexture.wrapT = THREE.ClampToEdgeWrapping;
+
                 const alphaMask = createAlphaMaskTexture();
 
                 const padloGeo = new THREE.PlaneGeometry(12, 12);
@@ -689,9 +698,9 @@
                     camera.lookAt(currentLook.x, currentLook.y, currentLook.z);
                 }
 
-                // 📍 PARALLAXIS: A háttér finom igazítása a kamera mozgásához
+                // 📍 HÁTTÉR PARALLAXIS MOZGÁSA A GÖRGETÉSSEL
                 if (hatterMesh) {
-                    hatterMesh.position.y = 2 - progress * 1.5;
+                    hatterMesh.position.y = 3 - progress * 2.0;
                 }
 
                 progressBar.style.transform = `scaleX(${progress})`;
