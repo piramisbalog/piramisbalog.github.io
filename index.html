@@ -520,6 +520,34 @@
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
+            // 📍 TÖKÉLETES TÖMÖR PADLÓ LÁGY SZÉLI KÖDDEL (NINCS ÉLES VÁGÁS)
+            function createAlphaMaskTexture() {
+                const maskCanvas = document.createElement("canvas");
+                maskCanvas.width = 512;
+                maskCanvas.height = 512;
+                const ctx = maskCanvas.getContext("2d");
+
+                ctx.fillStyle = "#000000";
+                ctx.fillRect(0, 0, 512, 512);
+
+                // A középső rész 100%-ig tömör, és csak a legszélén fut le lágyan a ködbe
+                const gradient = ctx.createRadialGradient(256, 256, 160, 256, 256, 250);
+                gradient.addColorStop(0.0, "rgba(255, 255, 255, 1)");
+                gradient.addColorStop(0.7, "rgba(255, 255, 255, 1)");
+                gradient.addColorStop(0.9, "rgba(255, 255, 255, 0.4)");
+                gradient.addColorStop(1.0, "rgba(255, 255, 255, 0)");
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(256, 256, 250, 0, Math.PI * 2);
+                ctx.fill();
+
+                const texture = new THREE.CanvasTexture(maskCanvas);
+                texture.wrapS = THREE.ClampToEdgeWrapping;
+                texture.wrapT = THREE.ClampToEdgeWrapping;
+                return texture;
+            }
+
             function updateCameraAspect() {
                 if (!camera || !renderer) return;
 
@@ -538,6 +566,10 @@
 
             function initThree() {
                 scene = new THREE.Scene();
+
+                // 📍 Hozzáadva a finom sűrűségi köd a háttér és a padló szélének egységéért
+                const fogColor = new THREE.Color(0x0a0a0a);
+                scene.fog = new THREE.FogExp2(fogColor, 0.05);
 
                 camera = new THREE.PerspectiveCamera(
                     55,
@@ -562,30 +594,36 @@
 
                 const textureLoader = new THREE.TextureLoader();
 
-                // 📍 1. MAGASABB HÁTTÉR KÉP A 3D TÉRBEN (hatter.jpg)
+                // 1. MAGASABB HÁTTÉR KÉP A 3D TÉRBEN (hatter.jpg)
                 textureLoader.load('./hatter.jpg', (texture) => {
                     const hatterGeo = new THREE.PlaneGeometry(55, 35);
                     const hatterMat = new THREE.MeshBasicMaterial({
                         map: texture,
-                        depthWrite: false
+                        depthWrite: false,
+                        fog: false
                     });
                     hatterMesh = new THREE.Mesh(hatterGeo, hatterMat);
-                    hatterMesh.position.set(0, 6, -15); // Megemelve Y=6 magasságba
+                    hatterMesh.position.set(0, 6, -15);
                     scene.add(hatterMesh);
                 });
 
-                // 📍 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - TELJESEN TÖMÖR, NEM ÁTLÁTSZÓ
+                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - TÖMÖR KÖÉPEN, LÁGY KÖDÖS SZÉLEKKEL
                 const padloTexture = textureLoader.load('./padlo.jpg');
+                padloTexture.wrapS = THREE.ClampToEdgeWrapping;
+                padloTexture.wrapT = THREE.ClampToEdgeWrapping;
+
+                const alphaMask = createAlphaMaskTexture();
 
                 const padloGeo = new THREE.PlaneGeometry(12, 12);
                 const padloMat = new THREE.MeshBasicMaterial({
                     map: padloTexture,
-                    transparent: false, // Nem átlátszó
-                    depthWrite: true
+                    alphaMap: alphaMask,
+                    transparent: true,
+                    depthWrite: false
                 });
 
                 const padloMesh = new THREE.Mesh(padloGeo, padloMat);
-                padloMesh.rotation.x = -Math.PI / 2; // Vízszintes síkba fektetve
+                padloMesh.rotation.x = -Math.PI / 2;
                 padloMesh.position.set(0.5, -0.5, -2);
                 scene.add(padloMesh);
 
@@ -663,7 +701,7 @@
                     camera.lookAt(currentLook.x, currentLook.y, currentLook.z);
                 }
 
-                // 📍 HÁTTÉR PARALLAXIS MOZGÁSA A KÖVETKEZŐ MAGASSÁGRÓL
+                // HÁTTÉR PARALLAXIS MOZGÁSA
                 if (hatterMesh) {
                     hatterMesh.position.y = 6 - progress * 2.5;
                 }
