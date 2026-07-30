@@ -520,7 +520,7 @@
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
-            // 📍 TÖKÉLETES TÖMÖR PADLÓ LÁGY SZÉLI KÖDDEL (NINCS ÉLES VÁGÁS)
+            // 📍 ERŐSEBB ÉS SZELESEBB LÁGY ÁTMENET MASK (NINCS ÉLES VÁGÁS)
             function createAlphaMaskTexture() {
                 const maskCanvas = document.createElement("canvas");
                 maskCanvas.width = 512;
@@ -530,16 +530,16 @@
                 ctx.fillStyle = "#000000";
                 ctx.fillRect(0, 0, 512, 512);
 
-                // A középső rész 100%-ig tömör, és csak a legszélén fut le lágyan a ködbe
-                const gradient = ctx.createRadialGradient(256, 256, 160, 256, 256, 250);
+                const gradient = ctx.createRadialGradient(256, 256, 80, 256, 256, 230);
                 gradient.addColorStop(0.0, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(0.7, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(0.9, "rgba(255, 255, 255, 0.4)");
+                gradient.addColorStop(0.5, "rgba(255, 255, 255, 1)");
+                gradient.addColorStop(0.75, "rgba(255, 255, 255, 0.6)");
+                gradient.addColorStop(0.92, "rgba(255, 255, 255, 0.15)");
                 gradient.addColorStop(1.0, "rgba(255, 255, 255, 0)");
 
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(256, 256, 250, 0, Math.PI * 2);
+                ctx.arc(256, 256, 230, 0, Math.PI * 2);
                 ctx.fill();
 
                 const texture = new THREE.CanvasTexture(maskCanvas);
@@ -567,9 +567,9 @@
             function initThree() {
                 scene = new THREE.Scene();
 
-                // 📍 Hozzáadva a finom sűrűségi köd a háttér és a padló szélének egységéért
+                // 📍 SOKKAL ERŐSEBB KÖD SŰRŰSÉG A LÁGY ÖSSZEOLVADÁSHOZ
                 const fogColor = new THREE.Color(0x0a0a0a);
-                scene.fog = new THREE.FogExp2(fogColor, 0.05);
+                scene.fog = new THREE.FogExp2(fogColor, 0.12);
 
                 camera = new THREE.PerspectiveCamera(
                     55,
@@ -607,14 +607,14 @@
                     scene.add(hatterMesh);
                 });
 
-                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - TÖMÖR KÖÉPEN, LÁGY KÖDÖS SZÉLEKKEL
+                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - SZÉLES, LÁGY MASKKAL
                 const padloTexture = textureLoader.load('./padlo.jpg');
                 padloTexture.wrapS = THREE.ClampToEdgeWrapping;
                 padloTexture.wrapT = THREE.ClampToEdgeWrapping;
 
                 const alphaMask = createAlphaMaskTexture();
 
-                const padloGeo = new THREE.PlaneGeometry(12, 12);
+                const padloGeo = new THREE.PlaneGeometry(13, 13);
                 const padloMat = new THREE.MeshBasicMaterial({
                     map: padloTexture,
                     alphaMap: alphaMask,
