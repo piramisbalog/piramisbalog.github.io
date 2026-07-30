@@ -520,7 +520,7 @@
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
 
-            // 📍 ERŐSEBB ÉS SZELESEBB LÁGY ÁTMENET MASK (NINCS ÉLES VÁGÁS)
+            // 📍 SOKKAL LÁGYABB, HOSSZABB ELMOSÓDÁSÚ PADLÓ MASZK (NINCS ÉLES VÁGÁS)
             function createAlphaMaskTexture() {
                 const maskCanvas = document.createElement("canvas");
                 maskCanvas.width = 512;
@@ -530,16 +530,17 @@
                 ctx.fillStyle = "#000000";
                 ctx.fillRect(0, 0, 512, 512);
 
-                const gradient = ctx.createRadialGradient(256, 256, 80, 256, 256, 230);
+                // Hosszú, fokozatos elmosódás a szélén, hogy teljesen lágyan olvadjon be
+                const gradient = ctx.createRadialGradient(256, 256, 20, 256, 256, 235);
                 gradient.addColorStop(0.0, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(0.5, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(0.75, "rgba(255, 255, 255, 0.6)");
-                gradient.addColorStop(0.92, "rgba(255, 255, 255, 0.15)");
+                gradient.addColorStop(0.45, "rgba(255, 255, 255, 1)");
+                gradient.addColorStop(0.7, "rgba(255, 255, 255, 0.75)");
+                gradient.addColorStop(0.88, "rgba(255, 255, 255, 0.25)");
                 gradient.addColorStop(1.0, "rgba(255, 255, 255, 0)");
 
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(256, 256, 230, 0, Math.PI * 2);
+                ctx.arc(256, 256, 235, 0, Math.PI * 2);
                 ctx.fill();
 
                 const texture = new THREE.CanvasTexture(maskCanvas);
@@ -567,9 +568,7 @@
             function initThree() {
                 scene = new THREE.Scene();
 
-                // 📍 SOKKAL ERŐSEBB KÖD SŰRŰSÉG A LÁGY ÖSSZEOLVADÁSHOZ
-                const fogColor = new THREE.Color(0x0a0a0a);
-                scene.fog = new THREE.FogExp2(fogColor, 0.24);
+                // Globális ködöt eltávolítottuk, hogy a 3D modell éles és tiszta maradjon
 
                 camera = new THREE.PerspectiveCamera(
                     55,
@@ -599,15 +598,14 @@
                     const hatterGeo = new THREE.PlaneGeometry(55, 35);
                     const hatterMat = new THREE.MeshBasicMaterial({
                         map: texture,
-                        depthWrite: false,
-                        fog: false
+                        depthWrite: false
                     });
                     hatterMesh = new THREE.Mesh(hatterGeo, hatterMat);
                     hatterMesh.position.set(0, 6, -15);
                     scene.add(hatterMesh);
                 });
 
-                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - SZÉLES, LÁGY MASKKAL
+                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - NAGYON HOSSZÚ, LÁGY SZÉLI ELMOSÓDÁSSAL
                 const padloTexture = textureLoader.load('./padlo.jpg');
                 padloTexture.wrapS = THREE.ClampToEdgeWrapping;
                 padloTexture.wrapT = THREE.ClampToEdgeWrapping;
