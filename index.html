@@ -342,6 +342,17 @@
             font-size: 1.1rem;
         }
 
+        .info-card a.email-link {
+            color: #f4d03f;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .info-card a.email-link:hover {
+            text-decoration: underline;
+            color: #ffdf6d;
+        }
+
         .map-frame {
             width: 100%;
             height: 220px;
@@ -473,13 +484,13 @@
                 <h2>📬 Elérhetőség</h2>
 
                 <p>
-                    📧 balogpiramis@gmail.com<br>
+                    📧 <a href="mailto:balogpiramis@gmail.com" class="email-link">balogpiramis@gmail.com</a><br>
                     📱 Függőben
                 </p>
 
                 <iframe
                     class="map-frame"
-                    src="https://maps.google.com/maps?q=48.097389,19.11325&hl=hu&z=14&output=embed"
+                    src="https://www.google.com/maps?q=48.0974010,19.1132444&output=embed"
                     title="Balogpiramis helye a térképen"
                     loading="lazy"
                     allowfullscreen
@@ -519,33 +530,6 @@
 
             let currentCam = { ...startCamPos };
             let currentLook = { ...startTarget };
-
-            // 📍 KÜLÖNLEGES PEREM-MASZK: A belső rész 100%-ig tömör, csak a külső sáv mosódik el
-            function createEdgeFadeMaskTexture() {
-                const maskCanvas = document.createElement("canvas");
-                maskCanvas.width = 512;
-                maskCanvas.height = 512;
-                const ctx = maskCanvas.getContext("2d");
-
-                ctx.fillStyle = "#000000";
-                ctx.fillRect(0, 0, 512, 512);
-
-                // A középső sugár (0-tól 185 pixelig) teljesen fehér (100% tömör padló, nincs átlátszóság!)
-                // Csak 185 pixeltől 250 pixelig indul a lágy perem-elmosódás
-                const gradient = ctx.createRadialGradient(256, 256, 185, 256, 256, 250);
-                gradient.addColorStop(0.0, "rgba(255, 255, 255, 1)");
-                gradient.addColorStop(1.0, "rgba(255, 255, 255, 0)");
-
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(256, 256, 250, 0, Math.PI * 2);
-                ctx.fill();
-
-                const texture = new THREE.CanvasTexture(maskCanvas);
-                texture.wrapS = THREE.ClampToEdgeWrapping;
-                texture.wrapT = THREE.ClampToEdgeWrapping;
-                return texture;
-            }
 
             function updateCameraAspect() {
                 if (!camera || !renderer) return;
@@ -589,7 +573,7 @@
 
                 const textureLoader = new THREE.TextureLoader();
 
-                // 1. MAGASABB HÁTTÉR KÉP A 3D TÉRBEN (hatter.jpg)
+                // 1. HÁTTÉR KÉP A 3D TÉRBEN (hatter.jpg)
                 textureLoader.load('./hatter.jpg', (texture) => {
                     const hatterGeo = new THREE.PlaneGeometry(55, 35);
                     const hatterMat = new THREE.MeshBasicMaterial({
@@ -601,32 +585,20 @@
                     scene.add(hatterMesh);
                 });
 
-                // 2. FŐ PADLÓ (TELJESEN TÖMÖR ÉS ÉLES A KÖZEPÉN)
+                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - TÖMÖR, NEM ÁTLÁTSZÓ
                 const padloTexture = textureLoader.load('./padlo.jpg');
-                const padloGeo = new THREE.PlaneGeometry(8, 8); // Kisebb belső tömör padló
+
+                const padloGeo = new THREE.PlaneGeometry(12, 12);
                 const padloMat = new THREE.MeshBasicMaterial({
                     map: padloTexture,
                     transparent: false,
                     depthWrite: true
                 });
+
                 const padloMesh = new THREE.Mesh(padloGeo, padloMat);
                 padloMesh.rotation.x = -Math.PI / 2;
                 padloMesh.position.set(0.5, -0.5, -2);
                 scene.add(padloMesh);
-
-                // 3. 📍 ÚJ ÁTMENETI PEREM-RÉTEG (Csak a széleken futó, lágyan elmosódó körgyűrű)
-                const edgeMask = createEdgeFadeMaskTexture();
-                const edgeGeo = new THREE.PlaneGeometry(13, 13); // Nagyobb külső gyűrű
-                const edgeMat = new THREE.MeshBasicMaterial({
-                    map: padloTexture,
-                    alphaMap: edgeMask,
-                    transparent: true,
-                    depthWrite: false
-                });
-                const edgeMesh = new THREE.Mesh(edgeGeo, edgeMat);
-                edgeMesh.rotation.x = -Math.PI / 2;
-                edgeMesh.position.set(0.5, -0.505, -2); // Picit alatta, hogy ne villogjon
-                scene.add(edgeMesh);
 
                 // Bevilágítás
                 const ambientLight = new THREE.AmbientLight(0xfff5e6, 1.6);
