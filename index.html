@@ -488,10 +488,10 @@
                     📱 Függőben
                 </p>
 
-                <!-- Térkép Ipolybalog piramisa helyszínével -->
+                <!-- Térkép Ipolybalog piramisa helyszínével (látványosság nevével a koordináták helyett) -->
                 <iframe
                     class="map-frame"
-                    src="https://www.google.com/maps?q=48.0973961,19.1132337&output=embed"
+                    src="https://www.google.com/maps?q=Ipolybalog+piramisa,+Balog+nad+Ip%C4%BEom&output=embed"
                     title="Ipolybalog piramisa a térképen"
                     loading="lazy"
                     allowfullscreen
@@ -538,7 +538,6 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 camera.aspect = aspect;
 
-                // Alapértelmezett FOV: 40 fok (keskeny kijelzőknél szükség esetén tágabb)
                 if (aspect < 1) {
                     camera.fov = 48;
                 } else {
@@ -552,7 +551,7 @@
             function initThree() {
                 scene = new THREE.Scene();
 
-                // PerspectiveCamera alapértelmezetten 40 fokos látószöggel (FOV)
+                // Kamera alapértelmezetten 40 fokos FOV-val
                 camera = new THREE.PerspectiveCamera(
                     40,
                     window.innerWidth / window.innerHeight,
@@ -734,4 +733,3 @@
     </script>
 </body>
 </html>
-
