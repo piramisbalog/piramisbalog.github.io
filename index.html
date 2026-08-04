@@ -7,7 +7,7 @@
     <title>Piramis Balog - Műholdtól a Bejáratig | Hivatalos Oldal</title>
 
     <meta name="description" content="Balog Piramis hivatalos interaktív 3D weboldala. Fedezd fel az ősi Egyiptom rejtett csodáit a műholdas nézettől a bejáratig valós idejű 3D modellel.">
-    <meta name="keywords" content="piramis balog, balog piramis, piramisbalog, egyiptom piramis, balogpiramis.github.io">
+    <meta name="keywords" content="piramis balog, balog piramis, piramisbalog, egyiptom piramis, balogpiramis.github.io, ipolybalog piramisa">
     <meta name="author" content="Balog Piramis">
     <meta name="robots" content="index, follow">
 
@@ -488,10 +488,11 @@
                     📱 Függőben
                 </p>
 
+                <!-- Térkép Ipolybalog piramisa helyszínével -->
                 <iframe
                     class="map-frame"
-                    src="https://www.google.com/maps?q=48.0974010,19.1132444&output=embed"
-                    title="Balogpiramis helye a térképen"
+                    src="https://www.google.com/maps?q=48.0973961,19.1132337&output=embed"
+                    title="Ipolybalog piramisa a térképen"
                     loading="lazy"
                     allowfullscreen
                     referrerpolicy="no-referrer-when-downgrade"
@@ -537,10 +538,11 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 camera.aspect = aspect;
 
+                // Alapértelmezett FOV: 40 fok (keskeny kijelzőknél szükség esetén tágabb)
                 if (aspect < 1) {
-                    camera.fov = 40;
+                    camera.fov = 48;
                 } else {
-                    camera.fov = 30;
+                    camera.fov = 40;
                 }
 
                 camera.updateProjectionMatrix();
@@ -550,8 +552,9 @@
             function initThree() {
                 scene = new THREE.Scene();
 
+                // PerspectiveCamera alapértelmezetten 40 fokos látószöggel (FOV)
                 camera = new THREE.PerspectiveCamera(
-                    55,
+                    40,
                     window.innerWidth / window.innerHeight,
                     0.1,
                     1000
