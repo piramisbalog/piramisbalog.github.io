@@ -88,7 +88,7 @@
                 img.decoding = "async";
                 img.src = currentFramePath(index);
 
-                img.onload = () => {
+                const finish = () => {
                     images[index] = img;
                     preloadContainer.appendChild(img);
 
@@ -101,6 +101,18 @@
                         }
                     }
                     resolve();
+                };
+
+                // img.decode() előre elvégzi a pixel-dekódolást a háttérben,
+                // mielőtt a kép egyáltalán kirajzolásra kerülne. Enélkül az
+                // ELSŐ drawImage() hívás szinkron dekódol — ez okozza az
+                // apró akadást pont akkor, amikor a kép "előkerül" scroll közben.
+                img.onload = () => {
+                    if (img.decode) {
+                        img.decode().then(finish).catch(finish);
+                    } else {
+                        finish();
+                    }
                 };
                 img.onerror = resolve;
             });
@@ -170,21 +182,28 @@
         progressBar.style.transform = `scaleX(${progress})`;
 
         targetFrame = Math.min(frameCount, Math.max(1, Math.floor(progress * frameCount) + 1));
-        currentLerpedFrame = lerp(currentLerpedFrame, targetFrame, 0.08);
 
-        const frameToDraw = Math.round(currentLerpedFrame);
+        // Ha a lerp már gyakorlatilag beérte a célt ÉS a legutóbb kirajzolt
+        // kép pontos volt, nincs értelme tovább lerp-elni vagy a fallback-et
+        // keresgélni minden egyes framen — ez csak felesleges CPU-munka,
+        // ami hosszabb görgetésnél hozzáadódik az összképhez.
+        const distanceToTarget = Math.abs(targetFrame - currentLerpedFrame);
+        const settled = distanceToTarget < 0.05 && lastDrawWasExact && lastDrawnFrame === targetFrame;
 
-        // Újra kell próbálkozni, ha VAGY változott a célkocka, VAGY az előző
-        // rajzolás csak fallback volt (tehát a pontos kép azóta megérkezhetett).
-        if (frameToDraw !== lastDrawnFrame || !lastDrawWasExact) {
-            const found = findNearestReady(frameToDraw);
-            if (found) {
-                renderImage(found.img);
-                lastDrawnFrame = found.index;
-                lastDrawWasExact = (found.index === frameToDraw);
+        if (!settled) {
+            currentLerpedFrame = lerp(currentLerpedFrame, targetFrame, 0.08);
+            const frameToDraw = Math.round(currentLerpedFrame);
+
+            if (frameToDraw !== lastDrawnFrame || !lastDrawWasExact) {
+                const found = findNearestReady(frameToDraw);
+                if (found) {
+                    renderImage(found.img);
+                    lastDrawnFrame = found.index;
+                    lastDrawWasExact = (found.index === frameToDraw);
+                }
+                // Ha semmi nincs a közelben betöltve, egyszerűen kihagyjuk ezt
+                // a framet, és a következő rAF-ban újra próbálkozunk.
             }
-            // Ha semmi nincs a közelben betöltve, egyszerűen kihagyjuk ezt a framet,
-            // és a következő rAF-ban újra próbálkozunk.
         }
 
         requestAnimationFrame(animate);
