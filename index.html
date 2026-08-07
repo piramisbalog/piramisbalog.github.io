@@ -6,24 +6,21 @@
 
     <title>Piramis Balog - Műholdtól a Bejáratig | Hivatalos Oldal</title>
 
-    <meta name="description" content="Balog Piramis hivatalos interaktív 3D weboldala. Fedezd fel az ősi Egyiptom rejtett csodáit a műholdas nézettől a bejáratig valós idejű 3D modellel.">
+    <meta name="description" content="Balog Piramis hivatalos weboldala. Fedezd fel az ősi Egyiptom rejtett csodáit a műholdas nézettől a bejáratig interaktív animációval.">
     <meta name="keywords" content="piramis balog, balog piramis, piramisbalog, egyiptom piramis, balogpiramis.github.io, ipolybalog piramisa">
     <meta name="author" content="Balog Piramis">
     <meta name="robots" content="index, follow">
 
     <link rel="canonical" href="https://piramisbalog.github.io/">
-
     <meta name="google-site-verification" content="google57f4eed80b0aa14b">
 
     <meta property="og:title" content="Piramis Balog - Műholdtól a Bejáratig">
-    <meta property="og:description" content="Balog Piramis hivatalos interaktív 3D weboldala.">
+    <meta property="og:description" content="Balog Piramis hivatalos interaktív weboldala.">
     <meta property="og:url" content="https://piramisbalog.github.io/">
     <meta property="og:type" content="website">
 
-    <!-- 3D Modell és Képek előtöltése -->
-    <link rel="preload" href="./piramis.glb" as="fetch" crossorigin="anonymous">
-    <link rel="preload" href="./hatter.jpg" as="image">
-    <link rel="preload" href="./padlo.jpg" as="image">
+    <!-- Az első képkocka előtöltése a gyors megjelenítésért -->
+    <link rel="preload" href="frames/ezgif-frame-001.jpg" as="image">
 
     <style>
         * {
@@ -94,10 +91,7 @@
             transform: translateY(-10px);
             opacity: 0;
             visibility: hidden;
-            transition:
-                transform 0.3s ease,
-                opacity 0.3s ease,
-                visibility 0.3s ease;
+            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
             will-change: transform, opacity;
         }
 
@@ -115,10 +109,7 @@
             font-size: 16px;
             letter-spacing: 0.5px;
             white-space: nowrap;
-            transition:
-                background 0.2s ease,
-                padding-left 0.2s ease,
-                color 0.2s ease;
+            transition: background 0.2s ease, padding-left 0.2s ease, color 0.2s ease;
         }
 
         .menu-list a:hover {
@@ -127,7 +118,7 @@
             color: #f4d03f;
         }
 
-        /* 3D Canvas Konténer */
+        /* 2D Canvas Animáció Konténer */
         .canvas-container {
             position: fixed;
             inset: 0;
@@ -138,12 +129,15 @@
             z-index: 0;
         }
 
-        #webglCanvas {
+        #sequenceCanvas {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
             display: block;
+            /* Hardveres gyorsítás gyenge eszközökhöz */
+            transform: translateZ(0);
+            will-change: transform;
         }
 
         .overlay {
@@ -176,15 +170,9 @@
         }
 
         @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateX(-50%) translateY(0);
-            }
-            40% {
-                transform: translateX(-50%) translateY(-10px);
-            }
-            60% {
-                transform: translateX(-50%) translateY(-5px);
-            }
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
         }
 
         /* Haladási sáv */
@@ -232,12 +220,7 @@
             max-width: 400px;
             aspect-ratio: 9 / 16;
             max-height: 70vh;
-            background: linear-gradient(
-                90deg,
-                rgba(212, 165, 116, 0.05) 0%,
-                rgba(212, 165, 116, 0.12) 50%,
-                rgba(212, 165, 116, 0.05) 100%
-            );
+            background: linear-gradient(90deg, rgba(212, 165, 116, 0.05) 0%, rgba(212, 165, 116, 0.12) 50%, rgba(212, 165, 116, 0.05) 100%);
             background-size: 200% 100%;
             border-radius: 16px;
             animation: shimmer 1.8s infinite ease-in-out;
@@ -272,12 +255,7 @@
         .skeleton-text {
             height: 14px;
             border-radius: 7px;
-            background: linear-gradient(
-                90deg,
-                rgba(212, 165, 116, 0.05) 0%,
-                rgba(212, 165, 116, 0.12) 50%,
-                rgba(212, 165, 116, 0.05) 100%
-            );
+            background: linear-gradient(90deg, rgba(212, 165, 116, 0.05) 0%, rgba(212, 165, 116, 0.12) 50%, rgba(212, 165, 116, 0.05) 100%);
             background-size: 200% 100%;
             animation: shimmer 1.8s infinite ease-in-out;
         }
@@ -324,9 +302,7 @@
             max-width: 550px;
             width: 100%;
             text-align: center;
-            box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
             pointer-events: auto;
         }
 
@@ -362,51 +338,20 @@
         }
 
         @media (max-width: 768px) {
-            .info-card {
-                padding: 2rem 1.5rem;
-                margin: 1rem;
-            }
-
-            .menu-container {
-                top: 15px;
-                left: 15px;
-            }
-
-            .hamburger-icon {
-                width: 30px;
-                height: 24px;
-                padding: 8px 6px;
-            }
-
-            .skeleton-canvas {
-                max-width: 280px;
-                max-height: 60vh;
-            }
-
-            .skeleton-canvas::before {
-                border-left-width: 55px;
-                border-right-width: 55px;
-                border-bottom-width: 100px;
-            }
-
-            .scroll-indicator {
-                font-size: 0.8rem;
-                padding: 8px 16px;
-                bottom: 25px;
-            }
+            .info-card { padding: 2rem 1.5rem; margin: 1rem; }
+            .menu-container { top: 15px; left: 15px; }
+            .hamburger-icon { width: 30px; height: 24px; padding: 8px 6px; }
+            .skeleton-canvas { max-width: 280px; max-height: 60vh; }
+            .skeleton-canvas::before { border-left-width: 55px; border-right-width: 55px; border-bottom-width: 100px; }
+            .scroll-indicator { font-size: 0.8rem; padding: 8px 16px; bottom: 25px; }
         }
     </style>
-
-    <!-- Three.js és GLTFLoader CDN-ről -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 
 <body>
     <!-- Betöltő képernyő -->
     <div class="skeleton-loading" id="skeletonLoading">
         <div class="skeleton-canvas"></div>
-
         <div class="skeleton-text-container">
             <div class="skeleton-text"></div>
             <div class="skeleton-text"></div>
@@ -417,20 +362,11 @@
 
     <!-- Navigáció -->
     <nav class="menu-container" aria-label="Főmenü">
-        <div
-            class="hamburger-icon"
-            id="hamburgerBtn"
-            role="button"
-            tabindex="0"
-            aria-label="Menü megnyitása"
-            aria-expanded="false"
-            aria-controls="menuList"
-        >
+        <div class="hamburger-icon" id="hamburgerBtn" role="button" tabindex="0" aria-label="Menü megnyitása" aria-expanded="false" aria-controls="menuList">
             <span></span>
             <span></span>
             <span></span>
         </div>
-
         <div class="menu-list" id="menuList">
             <a href="#bemutatkozas">Bemutatkozás</a>
             <a href="#multunk">Múltunk</a>
@@ -448,9 +384,9 @@
         ↓ Görgess lejjebb ↓
     </div>
 
-    <!-- 3D Canvas -->
+    <!-- Képkocka Canvas -->
     <div class="canvas-container">
-        <canvas id="webglCanvas"></canvas>
+        <canvas id="sequenceCanvas"></canvas>
         <div class="overlay"></div>
     </div>
 
@@ -482,22 +418,11 @@
         <section class="content-section" id="elerhetoseg">
             <div class="info-card">
                 <h2>📬 Elérhetőség</h2>
-
                 <p>
                     📧 <a href="mailto:balogpiramis@gmail.com" class="email-link">balogpiramis@gmail.com</a><br>
                     📱 Függőben
                 </p>
-
-                <!-- Térkép Ipolybalog piramisa helyszínével (látványosság nevével a koordináták helyett) -->
-                <iframe
-                    class="map-frame"
-                    src="https://www.google.com/maps?q=Ipolybalog+piramisa,+Balog+nad+Ip%C4%BEom&output=embed"
-                    title="Ipolybalog piramisa a térképen"
-                    loading="lazy"
-                    allowfullscreen
-                    referrerpolicy="no-referrer-when-downgrade"
-                ></iframe>
-
+                <iframe class="map-frame" src="https://www.google.com/maps?q=Ipolybalog+piramisa,+Balog+nad+Ip%C4%BEom&output=embed" title="Ipolybalog piramisa a térképen" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
                 <p>
                     Kövess minket, és légy részese az ősi titkok feltárásának!
                 </p>
@@ -512,223 +437,145 @@
             if ("scrollRestoration" in history) {
                 history.scrollRestoration = "manual";
             }
+            window.scrollTo(0, 0);
 
-            const canvas = document.getElementById("webglCanvas");
+            // UI Elemek
             const progressBar = document.getElementById("progressBar");
             const skeletonLoading = document.getElementById("skeletonLoading");
             const hamburgerBtn = document.getElementById("hamburgerBtn");
             const menuList = document.getElementById("menuList");
 
-            // Three.js Alapváltozók
-            let scene, camera, renderer, pyramidModel, hatterMesh;
+            // Canvas Setup
+            const canvas = document.getElementById("sequenceCanvas");
+            const context = canvas.getContext("2d", { alpha: false }); // Teljesítmény javítása átlátszóság kikapcsolásával
 
-            // Kamera alapértelmezett pozíciói
-            const startCamPos = { x: 0, y: 7.0, z: 0.1 };
-            const endCamPos = { x: 0, y: 1.5, z: 4.5 };
+            const frameCount = 240;
+            const images = [];
+            let targetFrame = 1;
+            let currentLerpedFrame = 1;
+            let lastDrawnFrame = 0;
+            let hasHiddenLoader = false;
 
-            const startTarget = { x: 0, y: 0, z: 0 };
-            const endTarget = { x: 0, y: 0, z: 0 };
+            // Képnév generátor paddinggal (001, 002... 240)
+            const currentFramePath = index => `frames/ezgif-frame-${index.toString().padStart(3, '0')}.jpg`;
 
-            let currentCam = { ...startCamPos };
-            let currentLook = { ...startTarget };
+            // Canvas méretezése
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                renderImage(images[lastDrawnFrame] || images[1]);
+            }
+            window.addEventListener("resize", resizeCanvas);
 
-            function updateCameraAspect() {
-                if (!camera || !renderer) return;
+            // Kép "cover" stílusú kirajzolása
+            function renderImage(img) {
+                if (!img || !img.complete) return;
+                
+                const hRatio = canvas.width / img.width;
+                const vRatio = canvas.height / img.height;
+                const ratio = Math.max(hRatio, vRatio);
+                const centerShift_x = (canvas.width - img.width * ratio) / 2;
+                const centerShift_y = (canvas.height - img.height * ratio) / 2;
+                
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
+            }
 
-                const aspect = window.innerWidth / window.innerHeight;
-                camera.aspect = aspect;
-
-                if (aspect < 1) {
-                    camera.fov = 48;
-                } else {
-                    camera.fov = 40;
+            // Képek aszinkron betöltése
+            const preloadImages = () => {
+                for (let i = 1; i <= frameCount; i++) {
+                    const img = new Image();
+                    img.src = currentFramePath(i);
+                    images[i] = img;
+                    
+                    img.onload = () => {
+                        // Elrejtjük a betöltőt amint az első kép kész
+                        if (i === 1) {
+                            renderImage(img);
+                            if (!hasHiddenLoader) {
+                                skeletonLoading.classList.add("hidden");
+                                hasHiddenLoader = true;
+                            }
+                        }
+                    };
                 }
+            };
 
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-
-            function initThree() {
-                scene = new THREE.Scene();
-
-                // Kamera alapértelmezetten 40 fokos FOV-val
-                camera = new THREE.PerspectiveCamera(
-                    40,
-                    window.innerWidth / window.innerHeight,
-                    0.1,
-                    1000
-                );
-                camera.position.set(startCamPos.x, startCamPos.y, startCamPos.z);
-                camera.lookAt(startTarget.x, startTarget.y, startTarget.z);
-
-                renderer = new THREE.WebGLRenderer({
-                    canvas: canvas,
-                    antialias: true,
-                    powerPreference: "high-performance"
-                });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.15;
-
-                updateCameraAspect();
-
-                const textureLoader = new THREE.TextureLoader();
-
-                // 1. HÁTTÉR KÉP A 3D TÉRBEN (hatter.jpg)
-                textureLoader.load('./hatter.jpg', (texture) => {
-                    const hatterGeo = new THREE.PlaneGeometry(55, 35);
-                    const hatterMat = new THREE.MeshBasicMaterial({
-                        map: texture,
-                        depthWrite: false
-                    });
-                    hatterMesh = new THREE.Mesh(hatterGeo, hatterMat);
-                    hatterMesh.position.set(0, 6, -15);
-                    scene.add(hatterMesh);
-                });
-
-                // 2. PADLÓ KÉP BETÖLTÉSE (padlo.jpg) - TÖMÖR, NEM ÁTLÁTSZÓ
-                const padloTexture = textureLoader.load('./padlo.jpg');
-
-                const padloGeo = new THREE.PlaneGeometry(12, 12);
-                const padloMat = new THREE.MeshBasicMaterial({
-                    map: padloTexture,
-                    transparent: false,
-                    depthWrite: true
-                });
-
-                const padloMesh = new THREE.Mesh(padloGeo, padloMat);
-                padloMesh.rotation.x = -Math.PI / 2;
-                padloMesh.position.set(0.5, -0.5, -2);
-                scene.add(padloMesh);
-
-                // Bevilágítás
-                const ambientLight = new THREE.AmbientLight(0xfff5e6, 1.6);
-                scene.add(ambientLight);
-
-                const mainSun = new THREE.DirectionalLight(0xffefe0, 2.4);
-                mainSun.position.set(5, 12, 8);
-                scene.add(mainSun);
-
-                const fillLight = new THREE.DirectionalLight(0x607890, 0.8);
-                fillLight.position.set(-6, 4, -5);
-                scene.add(fillLight);
-
-                // 3D Piramis Modell Betöltése
-                const loader = new THREE.GLTFLoader();
-
-                loader.load(
-                    "./piramis.glb",
-                    (gltf) => {
-                        pyramidModel = gltf.scene;
-
-                        pyramidModel.position.set(-1, 0, 0);
-                        pyramidModel.rotation.set(0, THREE.MathUtils.degToRad(220), 0);
-                        pyramidModel.scale.set(1, 1, 1);
-
-                        const box = new THREE.Box3().setFromObject(pyramidModel);
-                        const size = box.getSize(new THREE.Vector3());
-                        const maxDim = Math.max(size.x, size.y, size.z);
-                        const scale = 3.6 / maxDim;
-                        
-                        pyramidModel.scale.set(scale, scale, scale);
-
-                        scene.add(pyramidModel);
-
-                        skeletonLoading.classList.add("hidden");
-                    },
-                    undefined,
-                    (error) => {
-                        console.error("Hiba a 3D modell betöltésekor:", error);
-                    }
-                );
-            }
-
+            // Görgetés százalék számítása
             function getScrollProgress() {
                 const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
                 const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
                 return maxScroll > 0 ? Math.max(0, Math.min(1, scrollTop / maxScroll)) : 0;
             }
 
+            // Lineáris interpoláció a sima "Apple-szerű" mozgáshoz
+            const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
+
+            // Fő animációs ciklus
             function animate() {
-                requestAnimationFrame(animate);
-
                 const progress = getScrollProgress();
-
-                const targetCamX = startCamPos.x + (endCamPos.x - startCamPos.x) * progress;
-                const targetCamY = startCamPos.y + (endCamPos.y - startCamPos.y) * progress;
-                const targetCamZ = startCamPos.z + (endCamPos.z - startCamPos.z) * progress;
-
-                const targetLookX = startTarget.x + (endTarget.x - startTarget.x) * progress;
-                const targetLookY = startTarget.y + (endTarget.y - startTarget.y) * progress;
-                const targetLookZ = startTarget.z + (endTarget.z - startTarget.z) * progress;
-
-                currentCam.x += (targetCamX - currentCam.x) * 0.08;
-                currentCam.y += (targetCamY - currentCam.y) * 0.08;
-                currentCam.z += (targetCamZ - currentCam.z) * 0.08;
-
-                currentLook.x += (targetLookX - currentLook.x) * 0.08;
-                currentLook.y += (targetLookY - currentLook.y) * 0.08;
-                currentLook.z += (targetLookZ - currentLook.z) * 0.08;
-
-                if (camera) {
-                    camera.position.set(currentCam.x, currentCam.y, currentCam.z);
-                    camera.lookAt(currentLook.x, currentLook.y, currentLook.z);
-                }
-
-                // HÁTTÉR PARALLAXIS MOZGÁSA
-                if (hatterMesh) {
-                    hatterMesh.position.y = 6 - progress * 2.5;
-                }
-
+                
+                // Haladási sáv frissítése
                 progressBar.style.transform = `scaleX(${progress})`;
 
-                if (renderer && scene && camera) {
-                    renderer.render(scene, camera);
+                // Képkocka célpontjának meghatározása
+                targetFrame = Math.min(frameCount, Math.max(1, Math.floor(progress * frameCount) + 1));
+                
+                // Simítás: 0.08 módosítja a követés gyorsaságát (kisebb érték = puhább mozgás)
+                currentLerpedFrame = lerp(currentLerpedFrame, targetFrame, 0.08);
+                
+                const frameToDraw = Math.round(currentLerpedFrame);
+                
+                // Csak szükség esetén rajzolunk újra a performancia miatt
+                if (frameToDraw !== lastDrawnFrame && images[frameToDraw]) {
+                    renderImage(images[frameToDraw]);
+                    lastDrawnFrame = frameToDraw;
                 }
+
+                requestAnimationFrame(animate);
             }
 
-            window.addEventListener("resize", updateCameraAspect);
-
+            // Menü események
             function toggleMenu() {
                 const active = menuList.classList.toggle("active");
                 hamburgerBtn.setAttribute("aria-expanded", String(active));
             }
 
-            hamburgerBtn.addEventListener("click", (event) => {
-                event.stopPropagation();
-                toggleMenu();
-            });
-
-            hamburgerBtn.addEventListener("keydown", (event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    toggleMenu();
-                }
+            hamburgerBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleMenu(); });
+            hamburgerBtn.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleMenu(); }
             });
 
             document.querySelectorAll(".menu-list a").forEach((link) => {
-                link.addEventListener("click", (event) => {
-                    event.preventDefault();
-
+                link.addEventListener("click", (e) => {
+                    e.preventDefault();
                     const target = document.querySelector(link.getAttribute("href"));
                     target?.scrollIntoView({ behavior: "smooth", block: "start" });
-
                     menuList.classList.remove("active");
                     hamburgerBtn.setAttribute("aria-expanded", "false");
                 });
             });
 
-            document.addEventListener("click", (event) => {
-                if (!hamburgerBtn.contains(event.target) && !menuList.contains(event.target)) {
+            document.addEventListener("click", (e) => {
+                if (!hamburgerBtn.contains(e.target) && !menuList.contains(e.target)) {
                     menuList.classList.remove("active");
                     hamburgerBtn.setAttribute("aria-expanded", "false");
                 }
             });
 
-            window.scrollTo(0, 0);
-            initThree();
+            // Inicializálás
+            resizeCanvas();
+            preloadImages();
             animate();
+            
+            // Biztonsági timeout a betöltő képernyő eltüntetésére ha lassú a hálózat
+            setTimeout(() => {
+                if (!hasHiddenLoader) {
+                    skeletonLoading.classList.add("hidden");
+                    hasHiddenLoader = true;
+                }
+            }, 3000);
+
         })();
     </script>
 </body>
