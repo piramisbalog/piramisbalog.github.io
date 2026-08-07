@@ -14,7 +14,7 @@
     const canvas = document.getElementById("sequenceCanvas");
     const context = canvas.getContext("2d");
 
-    const frameCount = 240;
+    const frameCount = 192;
     const images = new Array(frameCount + 1).fill(null);
     let targetFrame = 1;
     let currentLerpedFrame = 1;
@@ -22,7 +22,7 @@
     let lastDrawWasExact = true; // false, ha a lastDrawnFrame csak fallback volt, nem a pontos cél
     let hasHiddenLoader = false;
 
-    const currentFramePath = index => `frames/ezgif-frame-${index.toString().padStart(3, '0')}.jpg`;
+    const currentFramePath = index => `frames1/frame_${index.toString().padStart(4, '0')}.webp`;
 
     function isReady(img) {
         return !!(img && img.complete && img.naturalWidth > 0);
