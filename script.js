@@ -251,6 +251,9 @@
         requestAnimationFrame(step);
     }
 
+    let wheelIdleTimer = null;
+    let recentWheelVelocity = 0;
+
     function handleWheel(e) {
         // Csak akkor vesszük át az irányítást, ha az oldal maga görgethető
         // (nincs pl. egy belső, saját scrollú elem fókuszban).
@@ -258,11 +261,27 @@
         desiredScrollY += e.deltaY;
         clampDesiredScroll();
 
-        // A wheel delta-ból becsüljük a sebességet a momentumhoz.
-        velocity = Math.max(-40, Math.min(40, e.deltaY));
+        // A trackpad/egér gesztus VÉGE felé a böngésző egyre kisebb
+        // deltaY-t küld (ő maga is lassít) — ha minden eseménynél
+        // felülírnánk a velocity-t, pont a lassuló szakasz "nyerné" a
+        // momentumot, ami szinte semmi. Ehelyett a mozdulat alatt a
+        // legnagyobb (abszolút értékben) észlelt sebességet tartjuk meg,
+        // és csak akkor engedjük el momentumként, ha egy rövid ideig
+        // (150ms) nem jön újabb wheel esemény — azaz a gesztus tényleg
+        // véget ért.
+        const instantVelocity = Math.max(-40, Math.min(40, e.deltaY));
+        if (Math.abs(instantVelocity) > Math.abs(recentWheelVelocity)) {
+            recentWheelVelocity = instantVelocity;
+        }
 
         if (!scrollAnimRunning) runScrollAnim();
-        runMomentum();
+
+        clearTimeout(wheelIdleTimer);
+        wheelIdleTimer = setTimeout(() => {
+            velocity = recentWheelVelocity;
+            recentWheelVelocity = 0;
+            runMomentum();
+        }, 150);
     }
 
     let touchStartY = null;
@@ -289,8 +308,11 @@
         desiredScrollY += delta;
         clampDesiredScroll();
 
-        // Sebesség px/frame-re normalizálva (~16.7ms egy frame 60fps-nél)
-        velocity = Math.max(-40, Math.min(40, (delta / dt) * 16.7));
+        // Sebesség px/frame-re normalizálva (~16.7ms egy frame 60fps-nél),
+        // enyhén simítva (exponenciális mozgóátlag), hogy egy utolsó,
+        // véletlenül lassú mikro-mozdulat ne nyomja el a valós lendületet.
+        const instantVelocity = Math.max(-40, Math.min(40, (delta / dt) * 16.7));
+        velocity = velocity * 0.5 + instantVelocity * 0.5;
 
         lastTouchY = currentY;
         lastTouchTime = now;
