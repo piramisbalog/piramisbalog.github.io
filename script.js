@@ -181,7 +181,7 @@
     // NEM megy ezen keresztül, azt a böngésző natívan kezeli — ez fontos
     // az akadálymentesség megőrzéséhez.
 
-    const MAX_SCROLL_PER_FRAME = 22; // px / frame (~60fps mellett ez a max "sebesség")
+    const MAX_SCROLL_PER_FRAME = 50; // px / frame (~60fps mellett ez a max "sebesség")
     const SCROLL_EASE = 0.18;        // mennyire simán fut be a célhoz
 
     let desiredScrollY = window.scrollY || 0;
