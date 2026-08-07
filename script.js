@@ -183,10 +183,15 @@
 
     const MAX_SCROLL_PER_FRAME = 50; // px / frame (~60fps mellett ez a max "sebesség")
     const SCROLL_EASE = 0.35;        // mennyire simán fut be a célhoz — ez a valódi "sebesség-érzet" szabályzó
+    const MOMENTUM_DECAY = 0.94;     // 1-hez közelebb = tovább gurul egy legyintés után
+    const MOMENTUM_MIN_VELOCITY = 0.5; // ez alatt a momentum leáll
 
     let desiredScrollY = window.scrollY || 0;
     let displayedScrollY = desiredScrollY;
     let scrollAnimRunning = false;
+
+    let velocity = 0;          // px / frame, az utolsó mozdulatokból becsülve
+    let momentumRunning = false;
 
     function clampDesiredScroll() {
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -220,18 +225,55 @@
         requestAnimationFrame(step);
     }
 
+    // Momentum: a mozdulat (wheel vagy touch) végén, ha volt sebesség,
+    // még néhány framen át "gurítjuk" tovább a célértéket, exponenciálisan
+    // csökkenő mértékben — így egy gyors legyintés is folytatódik egy
+    // kicsit, ahogy natív scrollnál megszoktuk, nem áll meg azonnal.
+    function runMomentum() {
+        if (momentumRunning) return;
+        momentumRunning = true;
+
+        const step = () => {
+            if (Math.abs(velocity) < MOMENTUM_MIN_VELOCITY) {
+                velocity = 0;
+                momentumRunning = false;
+                return;
+            }
+
+            desiredScrollY += velocity;
+            clampDesiredScroll();
+            velocity *= MOMENTUM_DECAY;
+
+            if (!scrollAnimRunning) runScrollAnim();
+            requestAnimationFrame(step);
+        };
+
+        requestAnimationFrame(step);
+    }
+
     function handleWheel(e) {
         // Csak akkor vesszük át az irányítást, ha az oldal maga görgethető
         // (nincs pl. egy belső, saját scrollú elem fókuszban).
         e.preventDefault();
         desiredScrollY += e.deltaY;
         clampDesiredScroll();
+
+        // A wheel delta-ból becsüljük a sebességet a momentumhoz.
+        velocity = Math.max(-40, Math.min(40, e.deltaY));
+
         if (!scrollAnimRunning) runScrollAnim();
+        runMomentum();
     }
 
     let touchStartY = null;
+    let lastTouchY = null;
+    let lastTouchTime = 0;
+
     function handleTouchStart(e) {
         touchStartY = e.touches[0].clientY;
+        lastTouchY = touchStartY;
+        lastTouchTime = performance.now();
+        velocity = 0;
         desiredScrollY = window.scrollY || 0;
         displayedScrollY = desiredScrollY;
     }
@@ -239,15 +281,27 @@
         if (touchStartY === null) return;
         e.preventDefault();
         const currentY = e.touches[0].clientY;
-        const delta = touchStartY - currentY;
-        touchStartY = currentY;
+        const now = performance.now();
+        const dt = Math.max(1, now - lastTouchTime); // ms, nullával osztás elkerülése
+
+        const delta = lastTouchY - currentY;
 
         desiredScrollY += delta;
         clampDesiredScroll();
+
+        // Sebesség px/frame-re normalizálva (~16.7ms egy frame 60fps-nél)
+        velocity = Math.max(-40, Math.min(40, (delta / dt) * 16.7));
+
+        lastTouchY = currentY;
+        lastTouchTime = now;
+
         if (!scrollAnimRunning) runScrollAnim();
     }
     function handleTouchEnd() {
         touchStartY = null;
+        // A touchend pillanatában mért sebességgel indítjuk a momentumot,
+        // hogy a felengedés utáni "gurulás" érzete meglegyen.
+        runMomentum();
     }
 
     window.addEventListener("wheel", handleWheel, { passive: false });
@@ -260,11 +314,12 @@
     // különben a legközelebbi wheel/touch esemény visszarántaná a régi
     // pozícióhoz.
     window.addEventListener("scroll", () => {
-        if (!scrollAnimRunning) {
+        if (!scrollAnimRunning && !momentumRunning) {
             desiredScrollY = window.scrollY || 0;
             displayedScrollY = desiredScrollY;
         }
     }, { passive: true });
+
 
     const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
 
