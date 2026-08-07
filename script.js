@@ -12,7 +12,8 @@
     const menuList = document.getElementById("menuList");
 
     const canvas = document.getElementById("sequenceCanvas");
-    const context = canvas.getContext("2d", { alpha: false }); 
+    // JAVÍTÁS: Az { alpha: false } eltávolítva, mert renderelési hibát és fekete képernyőt okozhatott
+    const context = canvas.getContext("2d"); 
 
     const frameCount = 240;
     const images = [];
@@ -31,7 +32,8 @@
     window.addEventListener("resize", resizeCanvas);
 
     function renderImage(img) {
-        if (!img || !img.complete) return;
+        // JAVÍTÁS: Ellenőrizzük a naturalWidth-et is, hogy biztosan betöltött-e a kép
+        if (!img || !img.complete || img.naturalWidth === 0) return;
         
         const hRatio = canvas.width / img.width;
         const vRatio = canvas.height / img.height;
@@ -125,3 +127,4 @@
     }, 3000);
 
 })();
+
