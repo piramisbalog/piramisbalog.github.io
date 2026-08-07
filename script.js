@@ -18,7 +18,8 @@
     const images = new Array(frameCount + 1).fill(null);
     let targetFrame = 1;
     let currentLerpedFrame = 1;
-    let lastDrawnFrame = 0; // az utoljára TÉNYLEGESEN kirajzolt frame indexe
+    let lastDrawnFrame = 0; // az utoljára ténylegesen kirajzolt (akár fallback) frame indexe
+    let lastDrawWasExact = true; // false, ha a lastDrawnFrame csak fallback volt, nem a pontos cél
     let hasHiddenLoader = false;
 
     const currentFramePath = index => `frames/ezgif-frame-${index.toString().padStart(3, '0')}.jpg`;
@@ -113,12 +114,27 @@
             await Promise.all(skeletonPromises);
         };
 
+        // Párhuzamos, kötegelt betöltés: a böngésző mobilon is jellemzően
+        // 6 párhuzamos kapcsolatot enged host-onként — ezt kihasználva
+        // sokkal gyorsabban feltöltődnek a hiányzó közbenső képek,
+        // mint egyesével, sorban várva egymásra.
+        const CONCURRENCY = 6;
         const loadRemaining = async () => {
+            const missing = [];
             for (let i = 1; i <= frameCount; i++) {
-                if (!images[i]) {
+                if (!images[i]) missing.push(i);
+            }
+
+            let cursor = 0;
+            async function worker() {
+                while (cursor < missing.length) {
+                    const i = missing[cursor++];
                     await loadImage(i);
                 }
             }
+
+            const workers = Array.from({ length: CONCURRENCY }, worker);
+            await Promise.all(workers);
         };
 
         loadSkeleton().then(() => {
@@ -158,17 +174,17 @@
 
         const frameToDraw = Math.round(currentLerpedFrame);
 
-        if (frameToDraw !== lastDrawnFrame) {
+        // Újra kell próbálkozni, ha VAGY változott a célkocka, VAGY az előző
+        // rajzolás csak fallback volt (tehát a pontos kép azóta megérkezhetett).
+        if (frameToDraw !== lastDrawnFrame || !lastDrawWasExact) {
             const found = findNearestReady(frameToDraw);
             if (found) {
                 renderImage(found.img);
-                // KULCS JAVÍTÁS: azt a frame-et jegyezzük meg, amit TÉNYLEG kirajzoltunk,
-                // nem a célt. Így amikor a hiányzó kép megérkezik, a rendszer újra
-                // meg fogja próbálni kirajzolni (mert frameToDraw !== lastDrawnFrame marad).
                 lastDrawnFrame = found.index;
+                lastDrawWasExact = (found.index === frameToDraw);
             }
             // Ha semmi nincs a közelben betöltve, egyszerűen kihagyjuk ezt a framet,
-            // és a következő rAF-ban újra próbálkozunk — nem "hazudunk" magunknak.
+            // és a következő rAF-ban újra próbálkozunk.
         }
 
         requestAnimationFrame(animate);
