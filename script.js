@@ -1,8 +1,6 @@
-/* script.js */
 (() => {
     "use strict";
 
-    // Gördülési pozíció visszaállításának tiltása frissítéskor
     if ("scrollRestoration" in history) {
         history.scrollRestoration = "manual";
     }
@@ -14,53 +12,70 @@
     const menuList = document.getElementById("menuList");
 
     const canvas = document.getElementById("sequenceCanvas");
-    const context = canvas.getContext("2d", { alpha: false }); // Teljesítményoptimalizálás: nincs alpha csatorna
+    const context = canvas.getContext("2d");
 
     const frameCount = 240;
-    const images = new Array(frameCount + 1);
-    
-    let currentFrameIndex = 1;
-    let lastDrawnFrame = -1;
+    const images = new Array(frameCount + 1).fill(null);
+    let targetFrame = 1;
+    let currentLerpedFrame = 1;
+    let lastDrawnFrame = 0; // az utoljára TÉNYLEGESEN kirajzolt frame indexe
     let hasHiddenLoader = false;
-    let isTicking = false;
 
     const currentFramePath = index => `frames/ezgif-frame-${index.toString().padStart(3, '0')}.jpg`;
 
-    // Canvas átméretezése Retina / HiDPI kijelző támogatással a tűéles megjelenítésért
+    function isReady(img) {
+        return !!(img && img.complete && img.naturalWidth > 0);
+    }
+
     function resizeCanvas() {
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = window.innerWidth * dpr;
-        canvas.height = window.innerHeight * dpr;
-        
-        context.scale(dpr, dpr);
-        
-        if (images[currentFrameIndex] && images[currentFrameIndex].complete) {
-            renderImage(images[currentFrameIndex]);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2); // 2x-nél ne pazaroljunk memóriát/GPU-t
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // Ha van már kirajzolt kép, rajzolja újra, különben próbálja az elsőt
+        const img = images[lastDrawnFrame] || images[1];
+        if (isReady(img)) {
+            renderImage(img);
         }
     }
-    window.addEventListener("resize", resizeCanvas);
 
-    // Kép kirajzolása "object-fit: cover" logikával
+    // Debounce: mobil címsor be/ki csúszásnál ne fusson feleslegesen sokszor
+    let resizeTimer = null;
+    window.addEventListener("resize", () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resizeCanvas, 100);
+    });
+
     function renderImage(img) {
-        if (!img || !img.complete || img.naturalWidth === 0) return;
-        
-        const canvasWidth = window.innerWidth;
-        const canvasHeight = window.innerHeight;
-        
-        const hRatio = canvasWidth / img.width;
-        const vRatio = canvasHeight / img.height;
+        if (!isReady(img)) return false;
+
+        // Fontos: a logikai (CSS) méretekkel számolunk, mert a context már
+        // transzformálva van a devicePixelRatio-val (lásd resizeCanvas).
+        const cw = window.innerWidth;
+        const ch = window.innerHeight;
+
+        const hRatio = cw / img.width;
+        const vRatio = ch / img.height;
         const ratio = Math.max(hRatio, vRatio);
-        
-        const centerShift_x = (canvasWidth - img.width * ratio) / 2;
-        const centerShift_y = (canvasHeight - img.height * ratio) / 2;
-        
-        context.clearRect(0, 0, canvasWidth, canvasHeight);
-        context.drawImage(img, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
+        const centerShift_x = (cw - img.width * ratio) / 2;
+        const centerShift_y = (ch - img.height * ratio) / 2;
+
+        context.clearRect(0, 0, cw, ch);
+        context.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
+        return true;
     }
 
-    // Hatékony előtöltési stratégia (Smart Preload DOM manipuláció nélkül)
+    // Okos Előtöltés (Smart Preload)
     const preloadImages = () => {
-        let loadedCount = 0;
+        const preloadContainer = document.createElement('div');
+        preloadContainer.style.display = 'none';
+        document.body.appendChild(preloadContainer);
 
         const loadImage = (index) => {
             return new Promise((resolve) => {
@@ -69,35 +84,36 @@
                     return;
                 }
                 const img = new Image();
+                img.decoding = "async";
                 img.src = currentFramePath(index);
-                
+
                 img.onload = () => {
                     images[index] = img;
-                    loadedCount++;
+                    preloadContainer.appendChild(img);
 
-                    // Ha az első kép megvan, eltüntetjük a loadert
-                    if (index === 1 && !hasHiddenLoader) {
+                    if (index === 1) {
                         renderImage(img);
-                        skeletonLoading.classList.add("hidden");
-                        hasHiddenLoader = true;
+                        lastDrawnFrame = 1;
+                        if (!hasHiddenLoader) {
+                            skeletonLoading.classList.add("hidden");
+                            hasHiddenLoader = true;
+                        }
                     }
                     resolve();
                 };
-                img.onerror = () => resolve(); // Hibakezelés: ne akadjon el a Promise
+                img.onerror = resolve;
             });
         };
 
-        // 1. Fázis: Elsődleges váz betöltése (minden 5. kép a gyors válaszidőért)
-        const loadSkeletonFrames = async () => {
-            const promises = [];
-            for (let i = 1; i <= frameCount; i += 5) {
-                promises.push(loadImage(i));
+        const loadSkeleton = async () => {
+            const skeletonPromises = [];
+            for (let i = 1; i <= frameCount; i += 10) {
+                skeletonPromises.push(loadImage(i));
             }
-            await Promise.all(promises);
+            await Promise.all(skeletonPromises);
         };
 
-        // 2. Fázis: A maradék képek háttérbeli betöltése
-        const loadRemainingFrames = async () => {
+        const loadRemaining = async () => {
             for (let i = 1; i <= frameCount; i++) {
                 if (!images[i]) {
                     await loadImage(i);
@@ -105,56 +121,59 @@
             }
         };
 
-        loadSkeletonFrames().then(() => {
-            loadRemainingFrames();
+        loadSkeleton().then(() => {
+            loadRemaining();
         });
     };
 
-    // Görgetési progress kiszámítása
-    function updateScrollAnimation() {
-        const scrollTop = window.scrollY;
+    function getScrollProgress() {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-        const progress = maxScroll > 0 ? Math.max(0, Math.min(1, scrollTop / maxScroll)) : 0;
-
-        // Progress bar frissítése
-        progressBar.style.transform = `scaleX(${progress})`;
-
-        // Cél képkocka meghatározása
-        const targetFrame = Math.min(frameCount, Math.max(1, Math.floor(progress * (frameCount - 1)) + 1));
-        currentFrameIndex = targetFrame;
-
-        // Csak akkor rajzolunk újra, ha változott a képkocka, ÉS a kép elérhető a memóriában
-        if (currentFrameIndex !== lastDrawnFrame) {
-            let imgToDraw = images[currentFrameIndex];
-
-            // Tartalék mechanizmus: Ha a pontos kép még nem töltődött le, keressük a legközelebbi meglévőt
-            if (!imgToDraw || !imgToDraw.complete) {
-                for (let i = currentFrameIndex; i >= 1; i--) {
-                    if (images[i] && images[i].complete) {
-                        imgToDraw = images[i];
-                        break;
-                    }
-                }
-            }
-
-            if (imgToDraw && imgToDraw.complete) {
-                renderImage(imgToDraw);
-                lastDrawnFrame = currentFrameIndex;
-            }
-        }
-
-        isTicking = false;
+        return maxScroll > 0 ? Math.max(0, Math.min(1, scrollTop / maxScroll)) : 0;
     }
 
-    // Scroll eseménykezelő requestAnimationFrame optimalizációval (Nincs felesleges CPU terhelés)
-    window.addEventListener("scroll", () => {
-        if (!isTicking) {
-            window.requestAnimationFrame(updateScrollAnimation);
-            isTicking = true;
-        }
-    }, { passive: true });
+    const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
 
-    // Mobil menü kezelése
+    // Ha a pontos kép nincs kész, keresi a legközelebbi betöltött framet
+    // MINDKÉT irányban, korlátozott sugárban (ne fusson végig 240 elemen feleslegesen).
+    const FALLBACK_RADIUS = 30;
+    function findNearestReady(frame) {
+        if (isReady(images[frame])) return { img: images[frame], index: frame };
+
+        for (let d = 1; d <= FALLBACK_RADIUS; d++) {
+            const down = frame - d;
+            const up = frame + d;
+            if (down >= 1 && isReady(images[down])) return { img: images[down], index: down };
+            if (up <= frameCount && isReady(images[up])) return { img: images[up], index: up };
+        }
+        return null;
+    }
+
+    function animate() {
+        const progress = getScrollProgress();
+        progressBar.style.transform = `scaleX(${progress})`;
+
+        targetFrame = Math.min(frameCount, Math.max(1, Math.floor(progress * frameCount) + 1));
+        currentLerpedFrame = lerp(currentLerpedFrame, targetFrame, 0.08);
+
+        const frameToDraw = Math.round(currentLerpedFrame);
+
+        if (frameToDraw !== lastDrawnFrame) {
+            const found = findNearestReady(frameToDraw);
+            if (found) {
+                renderImage(found.img);
+                // KULCS JAVÍTÁS: azt a frame-et jegyezzük meg, amit TÉNYLEG kirajzoltunk,
+                // nem a célt. Így amikor a hiányzó kép megérkezik, a rendszer újra
+                // meg fogja próbálni kirajzolni (mert frameToDraw !== lastDrawnFrame marad).
+                lastDrawnFrame = found.index;
+            }
+            // Ha semmi nincs a közelben betöltve, egyszerűen kihagyjuk ezt a framet,
+            // és a következő rAF-ban újra próbálkozunk — nem "hazudunk" magunknak.
+        }
+
+        requestAnimationFrame(animate);
+    }
+
     function toggleMenu() {
         const active = menuList.classList.toggle("active");
         hamburgerBtn.setAttribute("aria-expanded", String(active));
@@ -182,16 +201,15 @@
         }
     });
 
-    // Inicializálás
     resizeCanvas();
     preloadImages();
+    animate();
 
-    // Biztonsági időzítő a loader eltüntetésére, ha valamiért elakadna a hálózat
     setTimeout(() => {
         if (!hasHiddenLoader) {
             skeletonLoading.classList.add("hidden");
             hasHiddenLoader = true;
         }
-    }, 4000);
+    }, 3000);
 
 })();
