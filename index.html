@@ -3,353 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Piramis Balog - Műholdtól a Bejáratig | Hivatalos Oldal</title>
-
     <meta name="description" content="Balog Piramis hivatalos weboldala. Fedezd fel az ősi Egyiptom rejtett csodáit a műholdas nézettől a bejáratig interaktív animációval.">
     <meta name="keywords" content="piramis balog, balog piramis, piramisbalog, egyiptom piramis, balogpiramis.github.io, ipolybalog piramisa">
     <meta name="author" content="Balog Piramis">
     <meta name="robots" content="index, follow">
-
-    <link rel="canonical" href="https://piramisbalog.github.io/">
-    <meta name="google-site-verification" content="google57f4eed80b0aa14b">
-
-    <meta property="og:title" content="Piramis Balog - Műholdtól a Bejáratig">
-    <meta property="og:description" content="Balog Piramis hivatalos interaktív weboldala.">
-    <meta property="og:url" content="https://piramisbalog.github.io/">
-    <meta property="og:type" content="website">
-
-    <!-- Az első képkocka előtöltése a gyors megjelenítésért -->
+    <link rel="canonical" href="[https://piramisbalog.github.io/](https://piramisbalog.github.io/)">
     <link rel="preload" href="frames/ezgif-frame-001.jpg" as="image">
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #0a0a0a;
-            color: white;
-            overflow-x: hidden;
-        }
-
-        /* Navigáció és Menü */
-        .menu-container {
-            position: fixed;
-            top: 25px;
-            left: 25px;
-            z-index: 1000;
-        }
-
-        .hamburger-icon {
-            width: 36px;
-            height: 28px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            cursor: pointer;
-            background: rgba(10, 10, 10, 0.4);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border-radius: 8px;
-            padding: 10px 8px;
-            transition: background 0.3s ease, border-color 0.3s ease;
-            border: 1px solid rgba(212, 165, 116, 0.25);
-        }
-
-        .hamburger-icon:hover {
-            background: rgba(10, 10, 10, 0.65);
-            border-color: rgba(212, 165, 116, 0.5);
-        }
-
-        .hamburger-icon span {
-            display: block;
-            width: 100%;
-            height: 2.5px;
-            background: #d4a574;
-            border-radius: 3px;
-        }
-
-        .menu-list {
-            position: absolute;
-            top: 55px;
-            left: 0;
-            background: rgba(10, 10, 10, 0.5);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 12px 0;
-            min-width: 200px;
-            border: 1px solid rgba(212, 165, 116, 0.25);
-            transform: translateY(-10px);
-            opacity: 0;
-            visibility: hidden;
-            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
-            will-change: transform, opacity;
-        }
-
-        .menu-list.active {
-            transform: translateY(0);
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .menu-list a {
-            display: block;
-            color: #d4a574;
-            text-decoration: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            transition: background 0.2s ease, padding-left 0.2s ease, color 0.2s ease;
-        }
-
-        .menu-list a:hover {
-            background: rgba(212, 165, 116, 0.15);
-            padding-left: 28px;
-            color: #f4d03f;
-        }
-
-        /* 2D Canvas Animáció Konténer */
-        .canvas-container {
-            position: fixed;
-            inset: 0;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-            background: #0a0a0a;
-            z-index: 0;
-        }
-
-        #sequenceCanvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            display: block;
-            /* Hardveres gyorsítás gyenge eszközökhöz */
-            transform: translateZ(0);
-            will-change: transform;
-        }
-
-        .overlay {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at center, transparent 35%, rgba(10, 10, 10, 0.6) 100%);
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* Görgetés-jelző */
-        .scroll-indicator {
-            position: fixed;
-            bottom: 35px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            color: white;
-            font-size: 0.9rem;
-            opacity: 1;
-            animation: bounce 2s infinite;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
-            pointer-events: none;
-            background: rgba(10, 10, 10, 0.65);
-            padding: 10px 20px;
-            border-radius: 25px;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(212, 165, 116, 0.3);
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-            40% { transform: translateX(-50%) translateY(-10px); }
-            60% { transform: translateX(-50%) translateY(-5px); }
-        }
-
-        /* Haladási sáv */
-        .progress-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.05);
-            z-index: 100;
-        }
-
-        .progress-bar {
-            height: 100%;
-            width: 100%;
-            transform: scaleX(0);
-            transform-origin: left center;
-            will-change: transform;
-            background: linear-gradient(90deg, #d4a574, #f4d03f);
-            box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
-        }
-
-        /* Betöltő képernyő */
-        .skeleton-loading {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: #0a0a0a;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-
-        .skeleton-loading.hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        .skeleton-canvas {
-            width: 90%;
-            max-width: 400px;
-            aspect-ratio: 9 / 16;
-            max-height: 70vh;
-            background: linear-gradient(90deg, rgba(212, 165, 116, 0.05) 0%, rgba(212, 165, 116, 0.12) 50%, rgba(212, 165, 116, 0.05) 100%);
-            background-size: 200% 100%;
-            border-radius: 16px;
-            animation: shimmer 1.8s infinite ease-in-out;
-            border: 1px solid rgba(212, 165, 116, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .skeleton-canvas::before {
-            content: "";
-            position: absolute;
-            bottom: 15%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 80px solid transparent;
-            border-right: 80px solid transparent;
-            border-bottom: 140px solid rgba(212, 165, 116, 0.08);
-        }
-
-        .skeleton-text-container {
-            margin-top: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            width: 90%;
-            max-width: 350px;
-        }
-
-        .skeleton-text {
-            height: 14px;
-            border-radius: 7px;
-            background: linear-gradient(90deg, rgba(212, 165, 116, 0.05) 0%, rgba(212, 165, 116, 0.12) 50%, rgba(212, 165, 116, 0.05) 100%);
-            background-size: 200% 100%;
-            animation: shimmer 1.8s infinite ease-in-out;
-        }
-
-        .skeleton-text:first-child { width: 60%; height: 18px; }
-        .skeleton-text:nth-child(2) { width: 85%; }
-        .skeleton-text:nth-child(3) { width: 70%; }
-        .skeleton-text:nth-child(4) { width: 50%; }
-
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-
-        /* Görgethető tartalom */
-        .scroll-container {
-            position: relative;
-            z-index: 2;
-        }
-
-        .hero-section {
-            height: 100vh;
-            pointer-events: none;
-        }
-
-        .content-section {
-            min-height: 120vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            background: transparent;
-            position: relative;
-            pointer-events: none;
-        }
-
-        .info-card {
-            background: rgba(10, 10, 10, 0.65);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border: 1px solid rgba(212, 165, 116, 0.25);
-            border-radius: 24px;
-            padding: 3rem;
-            max-width: 550px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-            pointer-events: auto;
-        }
-
-        .info-card h1, .info-card h2 {
-            font-size: 2rem;
-            color: #d4a574;
-            margin-bottom: 1rem;
-        }
-
-        .info-card p {
-            color: #ccc;
-            line-height: 1.8;
-            font-size: 1.1rem;
-        }
-
-        .info-card a.email-link {
-            color: #f4d03f;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .info-card a.email-link:hover {
-            text-decoration: underline;
-            color: #ffdf6d;
-        }
-
-        .map-frame {
-            width: 100%;
-            height: 220px;
-            border: 0;
-            border-radius: 12px;
-            margin: 20px 0;
-        }
-
-        @media (max-width: 768px) {
-            .info-card { padding: 2rem 1.5rem; margin: 1rem; }
-            .menu-container { top: 15px; left: 15px; }
-            .hamburger-icon { width: 30px; height: 24px; padding: 8px 6px; }
-            .skeleton-canvas { max-width: 280px; max-height: 60vh; }
-            .skeleton-canvas::before { border-left-width: 55px; border-right-width: 55px; border-bottom-width: 100px; }
-            .scroll-indicator { font-size: 0.8rem; padding: 8px 16px; bottom: 25px; }
-        }
-    </style>
+    
+    <!-- CSS összekötése -->
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <!-- Betöltő képernyő -->
     <div class="skeleton-loading" id="skeletonLoading">
         <div class="skeleton-canvas"></div>
         <div class="skeleton-text-container">
@@ -360,7 +25,6 @@
         </div>
     </div>
 
-    <!-- Navigáció -->
     <nav class="menu-container" aria-label="Főmenü">
         <div class="hamburger-icon" id="hamburgerBtn" role="button" tabindex="0" aria-label="Menü megnyitása" aria-expanded="false" aria-controls="menuList">
             <span></span>
@@ -374,47 +38,31 @@
         </div>
     </nav>
 
-    <!-- Haladási sáv -->
     <div class="progress-container" aria-hidden="true">
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
-    <!-- Állandóan látható felirat -->
-    <div class="scroll-indicator" id="scrollIndicator">
-        ↓ Görgess lejjebb ↓
-    </div>
+    <div class="scroll-indicator" id="scrollIndicator">↓ Görgess lejjebb ↓</div>
 
-    <!-- Képkocka Canvas -->
     <div class="canvas-container">
         <canvas id="sequenceCanvas"></canvas>
         <div class="overlay"></div>
     </div>
 
-    <!-- Görgethető tartalom -->
     <div class="scroll-container">
         <div class="hero-section"></div>
-
         <section class="content-section" id="bemutatkozas">
             <div class="info-card">
                 <h1>Piramis Balog</h1>
-                <p>
-                    A kamera felülről ereszkedik lefelé, felfedve a piramis monumentális
-                    méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi
-                    Egyiptom rejtett csodáit a Balog Piramis hivatalos oldalán.
-                </p>
+                <p>A kamera felülről ereszkedik lefelé, felfedve a piramis monumentális méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi Egyiptom rejtett csodáit a Balog Piramis hivatalos oldalán.</p>
             </div>
         </section>
-
         <section class="content-section" id="multunk">
             <div class="info-card">
                 <h2>Múltunk</h2>
-                <p>
-                    Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit.
-                    Ahogy közelebb érsz a bejárathoz, feltárulnak az építmény szimmetrikus részletei.
-                </p>
+                <p>Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit. Ahogy közelebb érsz a bejárathoz, feltárulnak az építmény szimmetrikus részletei.</p>
             </div>
         </section>
-
         <section class="content-section" id="elerhetoseg">
             <div class="info-card">
                 <h2>📬 Elérhetőség</h2>
@@ -422,161 +70,13 @@
                     📧 <a href="mailto:balogpiramis@gmail.com" class="email-link">balogpiramis@gmail.com</a><br>
                     📱 Függőben
                 </p>
-                <iframe class="map-frame" src="https://www.google.com/maps?q=Ipolybalog+piramisa,+Balog+nad+Ip%C4%BEom&output=embed" title="Ipolybalog piramisa a térképen" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
-                <p>
-                    Kövess minket, és légy részese az ősi titkok feltárásának!
-                </p>
+                <iframe class="map-frame" src="[https://www.google.com/maps?q=Ipolybalog+piramisa,+Balog+nad+Ip%C4%BEom&output=embed](https://www.google.com/maps?q=Ipolybalog+piramisa,+Balog+nad+Ip%C4%BEom&output=embed)" title="Ipolybalog piramisa a térképen" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <p>Kövess minket, és légy részese az ősi titkok feltárásának!</p>
             </div>
         </section>
     </div>
 
-    <script>
-        (() => {
-            "use strict";
-
-            if ("scrollRestoration" in history) {
-                history.scrollRestoration = "manual";
-            }
-            window.scrollTo(0, 0);
-
-            // UI Elemek
-            const progressBar = document.getElementById("progressBar");
-            const skeletonLoading = document.getElementById("skeletonLoading");
-            const hamburgerBtn = document.getElementById("hamburgerBtn");
-            const menuList = document.getElementById("menuList");
-
-            // Canvas Setup
-            const canvas = document.getElementById("sequenceCanvas");
-            const context = canvas.getContext("2d", { alpha: false }); // Teljesítmény javítása átlátszóság kikapcsolásával
-
-            const frameCount = 240;
-            const images = [];
-            let targetFrame = 1;
-            let currentLerpedFrame = 1;
-            let lastDrawnFrame = 0;
-            let hasHiddenLoader = false;
-
-            // Képnév generátor paddinggal (001, 002... 240)
-            const currentFramePath = index => `frames/ezgif-frame-${index.toString().padStart(3, '0')}.jpg`;
-
-            // Canvas méretezése
-            function resizeCanvas() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-                renderImage(images[lastDrawnFrame] || images[1]);
-            }
-            window.addEventListener("resize", resizeCanvas);
-
-            // Kép "cover" stílusú kirajzolása
-            function renderImage(img) {
-                if (!img || !img.complete) return;
-                
-                const hRatio = canvas.width / img.width;
-                const vRatio = canvas.height / img.height;
-                const ratio = Math.max(hRatio, vRatio);
-                const centerShift_x = (canvas.width - img.width * ratio) / 2;
-                const centerShift_y = (canvas.height - img.height * ratio) / 2;
-                
-                context.clearRect(0, 0, canvas.width, canvas.height);
-                context.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
-            }
-
-            // Képek aszinkron betöltése
-            const preloadImages = () => {
-                for (let i = 1; i <= frameCount; i++) {
-                    const img = new Image();
-                    img.src = currentFramePath(i);
-                    images[i] = img;
-                    
-                    img.onload = () => {
-                        // Elrejtjük a betöltőt amint az első kép kész
-                        if (i === 1) {
-                            renderImage(img);
-                            if (!hasHiddenLoader) {
-                                skeletonLoading.classList.add("hidden");
-                                hasHiddenLoader = true;
-                            }
-                        }
-                    };
-                }
-            };
-
-            // Görgetés százalék számítása
-            function getScrollProgress() {
-                const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-                return maxScroll > 0 ? Math.max(0, Math.min(1, scrollTop / maxScroll)) : 0;
-            }
-
-            // Lineáris interpoláció a sima "Apple-szerű" mozgáshoz
-            const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
-
-            // Fő animációs ciklus
-            function animate() {
-                const progress = getScrollProgress();
-                
-                // Haladási sáv frissítése
-                progressBar.style.transform = `scaleX(${progress})`;
-
-                // Képkocka célpontjának meghatározása
-                targetFrame = Math.min(frameCount, Math.max(1, Math.floor(progress * frameCount) + 1));
-                
-                // Simítás: 0.08 módosítja a követés gyorsaságát (kisebb érték = puhább mozgás)
-                currentLerpedFrame = lerp(currentLerpedFrame, targetFrame, 0.08);
-                
-                const frameToDraw = Math.round(currentLerpedFrame);
-                
-                // Csak szükség esetén rajzolunk újra a performancia miatt
-                if (frameToDraw !== lastDrawnFrame && images[frameToDraw]) {
-                    renderImage(images[frameToDraw]);
-                    lastDrawnFrame = frameToDraw;
-                }
-
-                requestAnimationFrame(animate);
-            }
-
-            // Menü események
-            function toggleMenu() {
-                const active = menuList.classList.toggle("active");
-                hamburgerBtn.setAttribute("aria-expanded", String(active));
-            }
-
-            hamburgerBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleMenu(); });
-            hamburgerBtn.addEventListener("keydown", (e) => {
-                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleMenu(); }
-            });
-
-            document.querySelectorAll(".menu-list a").forEach((link) => {
-                link.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    const target = document.querySelector(link.getAttribute("href"));
-                    target?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    menuList.classList.remove("active");
-                    hamburgerBtn.setAttribute("aria-expanded", "false");
-                });
-            });
-
-            document.addEventListener("click", (e) => {
-                if (!hamburgerBtn.contains(e.target) && !menuList.contains(e.target)) {
-                    menuList.classList.remove("active");
-                    hamburgerBtn.setAttribute("aria-expanded", "false");
-                }
-            });
-
-            // Inicializálás
-            resizeCanvas();
-            preloadImages();
-            animate();
-            
-            // Biztonsági timeout a betöltő képernyő eltüntetésére ha lassú a hálózat
-            setTimeout(() => {
-                if (!hasHiddenLoader) {
-                    skeletonLoading.classList.add("hidden");
-                    hasHiddenLoader = true;
-                }
-            }, 3000);
-
-        })();
-    </script>
+    <!-- JavaScript összekötése (a body végén) -->
+    <script src="script.js"></script>
 </body>
 </html>
