@@ -6,6 +6,13 @@
     }
     window.scrollTo(0, 0);
 
+    // A CSS-ben lévő `scroll-behavior: smooth` ütközne a lentebbi saját
+    // scroll-animációnkkal (a böngésző is simítana, mi is — ez pont
+    // döcögést okozna). A saját JS scrollTo hívásainkat "azonnalira"
+    // állítjuk, a menüből induló scrollIntoView-hoz pedig explicit
+    // "smooth" paramétert adunk át, azt a böngésző natívan kezeli tovább.
+    document.documentElement.style.scrollBehavior = "auto";
+
     const progressBar = document.getElementById("progressBar");
     const skeletonLoading = document.getElementById("skeletonLoading");
     const hamburgerBtn = document.getElementById("hamburgerBtn");
@@ -159,6 +166,105 @@
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
         return maxScroll > 0 ? Math.max(0, Math.min(1, scrollTop / maxScroll)) : 0;
     }
+
+    // ------------------------------------------------------------------
+    // Scroll-sebesség korlátozás
+    // ------------------------------------------------------------------
+    // Cél: hiába pörgeti valaki nagyon gyorsan az egeret/touchpadet, vagy
+    // "flick"-el egy nagyot mobilon, az oldal ne tudjon a kép-előtöltés
+    // vagy a lerp-simítás elé szaladni. Ehhez a natív scrollt nem engedjük
+    // közvetlenül elmozdulni: a wheel/touch eseményből kiszámolt delta-t
+    // egy "kívánt" scroll célértékhez adjuk hozzá, a TÉNYLEGES scroll
+    // pozíciót pedig mi magunk animáljuk oda, limitált sebességgel.
+    //
+    // Billentyűzetes (Page Down, szóköz, nyilak) és screen reader scroll
+    // NEM megy ezen keresztül, azt a böngésző natívan kezeli — ez fontos
+    // az akadálymentesség megőrzéséhez.
+
+    const MAX_SCROLL_PER_FRAME = 14; // px / frame (~60fps mellett ez a max "sebesség")
+    const SCROLL_EASE = 0.18;        // mennyire simán fut be a célhoz
+
+    let desiredScrollY = window.scrollY || 0;
+    let displayedScrollY = desiredScrollY;
+    let scrollAnimRunning = false;
+
+    function clampDesiredScroll() {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        desiredScrollY = Math.max(0, Math.min(maxScroll, desiredScrollY));
+    }
+
+    function runScrollAnim() {
+        scrollAnimRunning = true;
+
+        const step = () => {
+            const diff = desiredScrollY - displayedScrollY;
+
+            if (Math.abs(diff) < 0.5) {
+                displayedScrollY = desiredScrollY;
+                window.scrollTo(0, displayedScrollY);
+                scrollAnimRunning = false;
+                return;
+            }
+
+            // Simított követés, de sebesség-plafonnal: nagy ugrásnál se
+            // lépjen többet egy framen belül, mint MAX_SCROLL_PER_FRAME.
+            let move = diff * SCROLL_EASE;
+            move = Math.max(-MAX_SCROLL_PER_FRAME, Math.min(MAX_SCROLL_PER_FRAME, move));
+
+            displayedScrollY += move;
+            window.scrollTo(0, displayedScrollY);
+
+            requestAnimationFrame(step);
+        };
+
+        requestAnimationFrame(step);
+    }
+
+    function handleWheel(e) {
+        // Csak akkor vesszük át az irányítást, ha az oldal maga görgethető
+        // (nincs pl. egy belső, saját scrollú elem fókuszban).
+        e.preventDefault();
+        desiredScrollY += e.deltaY;
+        clampDesiredScroll();
+        if (!scrollAnimRunning) runScrollAnim();
+    }
+
+    let touchStartY = null;
+    function handleTouchStart(e) {
+        touchStartY = e.touches[0].clientY;
+        desiredScrollY = window.scrollY || 0;
+        displayedScrollY = desiredScrollY;
+    }
+    function handleTouchMove(e) {
+        if (touchStartY === null) return;
+        e.preventDefault();
+        const currentY = e.touches[0].clientY;
+        const delta = touchStartY - currentY;
+        touchStartY = currentY;
+
+        desiredScrollY += delta;
+        clampDesiredScroll();
+        if (!scrollAnimRunning) runScrollAnim();
+    }
+    function handleTouchEnd() {
+        touchStartY = null;
+    }
+
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    // Ha valaki billentyűzettel vagy más módon mozdítja a scrollt (nem a
+    // fenti két eseményen át), tartsuk szinkronban a "kívánt" célértéket,
+    // különben a legközelebbi wheel/touch esemény visszarántaná a régi
+    // pozícióhoz.
+    window.addEventListener("scroll", () => {
+        if (!scrollAnimRunning) {
+            desiredScrollY = window.scrollY || 0;
+            displayedScrollY = desiredScrollY;
+        }
+    }, { passive: true });
 
     const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
 
