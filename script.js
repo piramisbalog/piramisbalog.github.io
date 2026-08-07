@@ -15,9 +15,7 @@
     const context = canvas.getContext("2d"); 
 
     const frameCount = 240;
-    
-    // JAVÍTÁS: Array helyett Map-et használunk, hogy törölni tudjuk a régi képeket a RAM-ból
-    const imageCache = new Map();
+    const images = new Array(frameCount + 1).fill(null);
     let targetFrame = 1;
     let currentLerpedFrame = 1;
     let lastDrawnFrame = 0;
@@ -25,31 +23,14 @@
 
     const currentFramePath = index => `frames/ezgif-frame-${index.toString().padStart(3, '0')}.jpg`;
 
-    // JAVÍTÁS: Memória menedzsment (Sliding Window Loader)
-    function getAndCleanImage(index) {
-        if (imageCache.has(index)) return imageCache.get(index);
-
-        const img = new Image();
-        img.src = currentFramePath(index);
-        imageCache.set(index, img);
-
-        // Töröljük a memóriából azokat a képeket, amik több mint 25 képkockára vannak az aktuálistól (iOS crash ellen)
-        for (const key of imageCache.keys()) {
-            if (Math.abs(key - index) > 25) {
-                const oldImg = imageCache.get(key);
-                oldImg.src = ""; // Nullázzuk, hogy az Apple GC (Garbage Collector) kitörölje
-                imageCache.delete(key);
-            }
-        }
-        return img;
-    }
-
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        
-        const img = imageCache.get(lastDrawnFrame) || imageCache.get(1);
-        if (img) renderImage(img);
+        // Ha van már kirajzolt kép, rajzolja újra, különben próbálja az elsőt
+        const img = images[lastDrawnFrame] || images[1];
+        if (img && img.complete) {
+            renderImage(img);
+        }
     }
     window.addEventListener("resize", resizeCanvas);
 
@@ -67,20 +48,67 @@
         return true;
     }
 
+    // Okos Előtöltés (Smart Preload)
     const preloadImages = () => {
-        // Induláskor csak az első 10-et töltjük be 240 helyett!
-        for (let i = 1; i <= 10; i++) {
-            const img = getAndCleanImage(i);
-            if (i === 1) {
+        // 1. lépés: Hozzunk létre egy rejtett konténert a DOM-ban.
+        // Ezzel kényszerítjük a böngészőt (főleg a Safarit), hogy ne törölje a RAM-ból a képeket, 
+        // mintha csak egy JS objektumban lennének.
+        const preloadContainer = document.createElement('div');
+        preloadContainer.style.display = 'none';
+        document.body.appendChild(preloadContainer);
+
+        let loadedCount = 0;
+
+        const loadImage = (index) => {
+            return new Promise((resolve) => {
+                if (images[index]) {
+                    resolve();
+                    return;
+                }
+                const img = new Image();
+                img.src = currentFramePath(index);
+                
                 img.onload = () => {
-                    renderImage(img);
-                    if (!hasHiddenLoader) {
-                        skeletonLoading.classList.add("hidden");
-                        hasHiddenLoader = true;
+                    images[index] = img;
+                    preloadContainer.appendChild(img); // Hozzáadjuk a DOM-hoz
+                    loadedCount++;
+
+                    if (index === 1) {
+                        renderImage(img);
+                        if (!hasHiddenLoader) {
+                            skeletonLoading.classList.add("hidden");
+                            hasHiddenLoader = true;
+                        }
                     }
+                    resolve();
                 };
+                img.onerror = resolve; // Ha hiba van, akkor is lépjen tovább
+            });
+        };
+
+        // 2. lépés: Prioritásos betöltés
+        // Először betöltjük minden 10. képet, hogy gyors tekerésnél meglegyen a "váz"
+        const loadSkeleton = async () => {
+            const skeletonPromises = [];
+            for (let i = 1; i <= frameCount; i += 10) {
+                skeletonPromises.push(loadImage(i));
             }
-        }
+            await Promise.all(skeletonPromises);
+        };
+
+        // 3. lépés: Betöltjük a maradékot szekvenciálisan
+        const loadRemaining = async () => {
+            for (let i = 1; i <= frameCount; i++) {
+                if (!images[i]) {
+                    await loadImage(i);
+                }
+            }
+        };
+
+        // Futtatjuk a stratégiát
+        loadSkeleton().then(() => {
+            loadRemaining();
+        });
     };
 
     function getScrollProgress() {
@@ -100,17 +128,25 @@
         
         const frameToDraw = Math.round(currentLerpedFrame);
         
-        // Előtöltjük a következő pár képkockát folyamatosan a háttérben
-        for (let i = 0; i <= 3; i++) {
-            if (frameToDraw + i <= frameCount) getAndCleanImage(frameToDraw + i);
-        }
-        
-        const imgToDraw = getAndCleanImage(frameToDraw);
-        
-        // Csak akkor mentjük el "kirajzolt" állapotúnak, ha tényleg kész
-        if (frameToDraw !== lastDrawnFrame && imgToDraw.complete && imgToDraw.naturalWidth > 0) {
-            renderImage(imgToDraw);
-            lastDrawnFrame = frameToDraw;
+        if (frameToDraw !== lastDrawnFrame) {
+            // Megpróbáljuk a pontos képkockát kirajzolni
+            let imgToDraw = images[frameToDraw];
+            
+            // Ha a pontos kép még nincs letöltve (hiányzó közép hiba elkerülése), 
+            // keressük meg a legközelebbi már betöltött képet lefelé.
+            if (!imgToDraw || !imgToDraw.complete) {
+                for (let i = frameToDraw - 1; i >= 1; i--) {
+                    if (images[i] && images[i].complete) {
+                        imgToDraw = images[i];
+                        break;
+                    }
+                }
+            }
+
+            if (imgToDraw && imgToDraw.complete && imgToDraw.naturalWidth > 0) {
+                renderImage(imgToDraw);
+                lastDrawnFrame = frameToDraw; // Ide csak a cél frame-et írjuk, hogy a lerp ne akadjon meg
+            }
         }
 
         requestAnimationFrame(animate);
@@ -155,5 +191,10 @@
     }, 3000);
 
 })();
+```eof
 
+**Mi változott? Miért oldja meg ez a hiányzó részeket és a szaggatást?**
 
+1.  **A Memória-trükk (`preloadContainer`):** Nem csak egy JS-tömbbe rakjuk a képeket, hanem ténylegesen hozzáadjuk őket a weblap forráskódjához (DOM), de egy elrejtett (`display: none`) mezőbe. A böngészők (főleg a mobilok) a DOM-ban lévő elemeket sokkal kevésbé merik törölni a memóriából, mint a levegőben lógó JS objektumokat.
+2.  **Okos betöltés ("Skeleton" Load):** Nem próbálja egyszerre letölteni az 1, 2, 3... 240. képet (ami bedugítaná a hálózatot és a közepénél feladná). Ehelyett **először** letölti az 1., 10., 20., 30. stb. képeket. Így ha gyorsan végiggörgetsz az oldalon, már meglesz az animáció váza. Csak ezután, a háttérben tölti be a maradékot (2, 3, 4, 5...).
+3.  **Hibás kockák átugrása:** Az `animate` hurokban van egy új ellenőrzés. Ha a 125. képkockához érsz, de az a lassú internet miatt még nincs letöltve, a rendszer **nem** rajzol feketét, és **nem** fagy le, hanem villámgyorsan visszakeres egy olyan képet (pl. a 120-ast), ami már le van töltve, és azt mutatja, amíg a többi meg nem érkezik.
