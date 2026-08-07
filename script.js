@@ -182,7 +182,7 @@
     // az akadálymentesség megőrzéséhez.
 
     const MAX_SCROLL_PER_FRAME = 50; // px / frame (~60fps mellett ez a max "sebesség")
-    const SCROLL_EASE = 0.18;        // mennyire simán fut be a célhoz
+    const SCROLL_EASE = 0.35;        // mennyire simán fut be a célhoz — ez a valódi "sebesség-érzet" szabályzó
 
     let desiredScrollY = window.scrollY || 0;
     let displayedScrollY = desiredScrollY;
