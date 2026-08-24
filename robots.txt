@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: [https://piramisbalog.github.io/sitemap.xml](https://piramisbalog.github.io/sitemap.xml)

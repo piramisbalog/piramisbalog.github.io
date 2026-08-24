@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- A böngészőfül címe és a Google találati címsora -->
+    <title>Piramis Balog - Ipolybalog (Balog nad Ipľom) | Negyela Imre / Nedela Imrich</title>
+    
+    <!-- Meta adatok a keresőknek (láthatatlan a weboldalon) -->
+    <meta name="description" content="Balog Piramis hivatalos weboldala (Ipolybalog / Balog nad Ipľom). Negyela Imre (Nedela Imrich) piramisa. Fedezd fel az ősi Egyiptom rejtett csodáit az interaktív animációval.">
+    <meta name="keywords" content="piramis balog, balog piramis, piramisbalog, Negyela Imre, Nedela Imrich, Nedela Imre, Ipolybalog, Balog nad Iplom, Piramis, pyramida, pyramid, ipolybalog piramisa">
+    <meta name="author" content="Negyela Imre / Nedela Imrich">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://piramisbalog.github.io/">
+
+    <!-- Favicon (SVG Pyramid) -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 10 L10 90 L90 90 Z' fill='none' stroke='%23d4a574' stroke-width='8'/%3E%3Cpath d='M50 10 L50 90' stroke='%23d4a574' stroke-width='4'/%3E%3C/svg%3E">
+
+    <!-- Open Graph (Közösségi média megosztáshoz) -->
+    <meta property="og:title" content="Piramis Balog - Ipolybalog | Negyela Imre">
+    <meta property="og:description" content="Fedezd fel a Balog Piramis ősi titkait. Negyela Imre piramisa Ipolybalogon.">
+    <meta property="og:image" content="https://piramisbalog.github.io/ceo.webp">
+    <meta property="og:url" content="https://piramisbalog.github.io/">
+    <meta property="og:type" content="website">
+
+    <!-- Google Fonts (Professzionális megjelenés) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+
+    
+    <!-- Videók előtöltése a gyorsabb megjelenés érdekében -->
+    <link rel="preload" href="video1_slow.mp4" as="video" type="video/mp4" media="(min-width: 768px)">
+    <link rel="preload" href="video_slow.mp4" as="video" type="video/mp4" media="(max-width: 767px)">
+
+    <!-- Azonnali visszaugrás az oldal tetejére vissza gomb használatakor -->
+    <script>
+        // BFCache (Back/Forward Cache) teljes letiltása, hogy mindig frissen töltsön be
+        window.addEventListener('unload', function() {}); 
+        
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, 0);
+    </script>
+
+    <!-- Google Strukturált Adatok (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "TouristAttraction",
+          "name": "Piramis Balog",
+          "alternateName": ["Ipolybalogi Piramis", "Balog nad Ipľom Pyramída", "Balog Piramis"],
+          "description": "Balog Piramis hivatalos oldala Ipolybalogon.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Ipolybalog / Balog nad Ipľom",
+            "addressCountry": "SK"
+          }
+        },
+        {
+          "@type": "Person",
+          "name": "Negyela Imre",
+          "alternateName": ["Nedela Imrich", "Nedela Imre"]
+        }
+      ]
+    }
+    </script>
+
+    <link rel="stylesheet" href="style.css?v=11">
+</head>
+<body>
+    <!-- Könnyű SVG betöltő -->
+    <div class="skeleton-loading" id="skeletonLoading">
+        <svg class="loader-pyramid" viewBox="0 0 100 100" width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 10 L10 90 L90 90 Z" fill="none" stroke="#d4a574" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M50 10 L50 90" fill="none" stroke="#d4a574" stroke-width="2" opacity="0.6"/>
+            <path d="M20 70 L80 70" fill="none" stroke="#d4a574" stroke-width="1.5" opacity="0.4"/>
+            <path d="M30 50 L70 50" fill="none" stroke="#d4a574" stroke-width="1.5" opacity="0.4"/>
+            <path d="M40 30 L60 30" fill="none" stroke="#d4a574" stroke-width="1.5" opacity="0.4"/>
+        </svg>
+    </div>
+
+
+
+    <div class="progress-container" aria-hidden="true">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="scroll-indicator" id="scrollIndicator">↓ Görgess lejjebb ↓</div>
+
+    <!-- Hang vezérlő gomb -->
+    <button class="audio-toggle" id="audioToggle" aria-label="Háttérhang be/ki">
+        <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+            </svg>
+        </span>
+        <span class="text">Hang</span>
+    </button>
+
+    <!-- Éjszakai átmenet (Day to Night) overlay -->
+    <div id="night-overlay"></div>
+
+    <!-- ScrollyVideo konténer: a könyvtár automatikusan kezeli a videót -->
+    <div id="scrolly-video-container"></div>
+
+    <div class="scroll-container">
+        <div class="hero-section"></div>
+        <section class="content-section" id="bemutatkozas">
+            <div class="content-sticky">
+                <div class="info-card fade-in-section">
+                    <h1>Piramis Balog</h1>
+                    <p>A kamera felülről ereszkedik lefelé, felfedve a piramis monumentális méreteit és tökéletes geometriáját. Fedezd fel velünk az ősi Egyiptom rejtett csodáit a Balog Piramis hivatalos oldalán.</p>
+                </div>
+            </div>
+        </section>
+        <section class="content-section" id="multunk">
+            <div class="content-sticky">
+                <div class="info-card fade-in-section">
+                    <h2>Múltunk</h2>
+                    <p>Évtizedek óta kutatjuk az egyiptomi civilizáció emlékeit. Ahogy közelebb érsz a bejárathoz, feltárulnak az építmény szimmetrikus részletei.</p>
+                </div>
+            </div>
+        </section>
+        <section class="content-section" id="elerhetoseg">
+            <div class="content-sticky">
+                <div class="info-card fade-in-section">
+                    <h2>Elérhetőség</h2>
+                    <p>
+                        Email: <a href="mailto:balogpiramis@gmail.com" class="email-link">balogpiramis@gmail.com</a><br>
+                        Telefon: Függőben
+                    </p>
+                    <iframe class="map-frame" src="https://www.google.com/maps?q=Ipolybalog+piramisa&output=embed" allowfullscreen loading="lazy" aria-hidden="false" tabindex="0"></iframe>
+                    
+                    <p>Kövess minket, és légy részese az ősi titkok feltárásának!</p>
+                    <a href="galeria.html" class="gallery-link-btn">Megnézem a Terveket és a Galériát</a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/scrolly-video@latest/dist/scrolly-video.js"></script>
+    <script src="script.js?v=15"></script>
+</body>
+</html>
